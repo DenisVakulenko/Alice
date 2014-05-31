@@ -9,21 +9,54 @@ using System.IO;
 using LemmatizerNET;
 using System.Text.RegularExpressions;
 
-namespace Kim {
-    public class Connection<T> : FuzzyData<T> {
-        Word _Binder;
+namespace Alice {
+    public class Connection<T, BinderT> : FuzzyData<T> {
+        BinderT _Binder;
 
         public Connection() {
             _Confidence = 0;
         }
-        public Connection(T word, Double confidence = 1, Word binder = null) {
+        public Connection(T word, Double confidence = 1, BinderT binder = default(BinderT)) {
             _Data = word;
             _Binder = binder;
             _Confidence = confidence;
         }
-        public Connection(T word, Word binder) {
+        public Connection(T word, BinderT binder) {
             _Data = word;
             _Binder = binder;
+            _Confidence = 1;
+        }
+
+        public T Word {
+            get {
+                return _Data;
+            }
+        }
+        public BinderT Binder {
+            get {
+                return _Binder;
+            }
+        }
+    }
+    public class WordConnection<T> : FuzzyData<T> where T : Alice.Word {
+        Word _Binder;
+
+        public WordConnection() {
+            _Confidence = 0;
+        }
+        public WordConnection(T word, Double confidence = 1, Word binder = null) {
+            _Data = word;
+            _Binder = binder;
+            _Confidence = confidence;
+        }
+        public WordConnection(T word, Word binder) {
+            _Data = word;
+            _Binder = binder;
+            _Confidence = 1;
+        }
+        public WordConnection(String word, String binder) {
+            _Data = (T)Brain.GetWord(word);
+            _Binder = Brain.GetWord(binder);
             _Confidence = 1;
         }
 
@@ -57,11 +90,6 @@ namespace Kim {
                 return _Data;
             }
         }
-        public Word Binder {
-            get {
-                return _Binder;
-            }
-        }
     }
  
 
@@ -74,7 +102,7 @@ namespace Kim {
         protected List<WordConnection> Relatives;
         protected List<WordConnection> Synonyms;
 
-        protected List<Connection<SpecifiedWord>> Rules;
+        //protected List<Connection<SpecifiedWord>> Rules;
 
         public class QItem {
             Word Q;
@@ -90,12 +118,12 @@ namespace Kim {
                 }
             }
             public QItem(String q) {
-                Q = Dictionary.GetWord(q);
+                Q = Brain.GetWord(q);
             }
             public QItem(String q, String[] verified) {
-                Q = Dictionary.GetWord(q);
+                Q = Brain.GetWord(q);
                 foreach (var i in verified) {
-                    VerifiedAnsvers.Add(Dictionary.GetWord(i));
+                    VerifiedAnsvers.Add(Brain.GetWord(i));
                 }
             }
         }
@@ -124,12 +152,16 @@ namespace Kim {
             AddVerifiedVariant(word);
         }
 
-        public PsOS POS() {
-            //InitFrom.TypeAncode
-            String rgt = Dictionary.Instance.rgt;
-            String r = Regex.Match(rgt, "^" + InitFrom.GetAncode(0) + "[^а-яА-яЕё]*(.*)", RegexOptions.Multiline).Groups[1].Value.Replace("\r", "");
+        public PsOS POS {
+            get {
+                String rgt = Brain.Instance.rgt;
+                String r = Regex.Match(rgt, "^" + InitFrom.GetAncode(0) + "[^а-яА-яЕё]*(.*)", RegexOptions.Multiline).Groups[1].Value.Replace("\r", "");
 
-            return PsOS.N;
+                int p = r.IndexOf(' ');
+                if (p > 0) r = r.Substring(0, p);
+
+                return Vars.GetPOS(r);
+            }
         }
 
         public void AddVerifiedVariant(string word) {
@@ -195,47 +227,52 @@ namespace Kim {
                 if (i.Word == word.Word)
                     return;
 
-            Rules.Add(new Connection<SpecifiedWord>(word));
+            //Rules.Add(new Connection<SpecifiedWord>(word));
         }
     }
 
     public class Verb : Word { // глагол
-        List<Connection<Adv>> Adverbiums; // наречия
+        List<WordConnection<Adv>> Adverbiums; // наречия
         
         //List<Connection<Noun>> Adverbiums; // в папку. на стол
+
+        public Verb(IParadigm form, String word) : base(form, word) { }
     }
     public class Adv : Word {  // наречие
-        Adj AdjParent;     // если было образовано от прил. быстро - быстрый.
-        Noun NounParent;     // если было образовано от прил. домой - дом.
+        Adj AdjParent;         // если было образовано от прил. быстро - быстрый.
+        Noun NounParent;       // если было образовано от прил. домой - дом.
+
+        public Adv(IParadigm form, String word) : base(form, word) { }
     }
     public class Adj : Word {  // прил
         Cases Case;
         Numbers Number;
 
-        List<Connection<Adj>> Adjectives; // прил прил ex: ярко красный = кр прил + прил
+        List<WordConnection<Adj>> Adjectives; // прил прил ex: ярко красный = кр прил + прил
 
         List<WordConnection> GeneralizeParent; // красный - цвет. второй - порядковый номер.
+
+        public Adj(IParadigm form, String word) : base(form, word) { }
     }
     public class Noun : Word { // сущ.
-        Cases Case;
-        Numbers Number;
-
-        List<WordConnection> Adjectives; // прилагательные 
+        List<WordConnection> Adjectives = new List<WordConnection>(); // прилагательные 
         // день - настроение. день - сложность. день - насыщенность.
         //// утро - чать дня. вечер - часть дня.
         //  день - часть. части дня - утро, вечер.
 
-        List<Connection<Verb>> ThisCan;
-        List<Connection<Verb>> WeCan;
+        public List<WordConnection<Verb>> ThisCan = new List<WordConnection<Verb>>();
+        public List<WordConnection<Verb>> WeCan = new List<WordConnection<Verb>>();
 
-        List<WordConnection> GeneralizeParent;
+        public List<Word> GeneralizeParents = new List<Word>();
         
         // вторник - день. люмен - музыкальная группа.
         // длинный - длина, короткий - длина. длина - размер. ширина - размер. большой - размер.
         // сложный - сложность. легкий - легкость. важный - важность. неважный - важность.
         // утро - чать дня. вечер - часть дня. 
         
-        List<WordConnection> PartsOfThis;
+        List<WordConnection> PartsOfThis = new List<WordConnection>();
+
+        public Noun(IParadigm form, String word) : base(form, word) { }
 
         public void AddRule(String rule) {
             
@@ -245,13 +282,13 @@ namespace Kim {
     }
 
 
-    public class SpecifiedPart<T> {
+    public class SpecifiedPart<T> where T : Alice.Word {
         public T Word;
+        Vars.WordForm Form;
         String Collocation;
 
         List<WordConnection> Properties;    //  = крутая. / музыкальная. название = kiss. музыкант = а1. музыкант а2. жанр = рок. жанр = рок'н'ролл.
 
-        
         public void AddProperty(Word value, Word property) {
             WordConnection wc = new WordConnection(value, property);
             Properties.Add(wc);
@@ -263,9 +300,8 @@ namespace Kim {
     }
     public class SpecifiedWord : SpecifiedPart<Word> { }
     public class SpecifiedNoun : SpecifiedPart<Noun> {
-        //Noun Word;            // день время группа группа
-        //String Collocation;   // день недели. время редактирования. крутая группа. kiss.
-
+        // Word =        день         время                 группа         группа
+        // Collocation = день недели. время редактирования. крутая группа. kiss.
         Verb ThisDo;    // наступил.
         Verb WeDo;      // изменить. назначить.
 
@@ -278,7 +314,7 @@ namespace Kim {
             List<int> Nouns = new List<int>();
 
             foreach (String Word in collocation.Split(' ')) {
-                Words.Add(Dictionary.GetWord(Word));
+                Words.Add(Brain.GetWord(Word));
                 //if (Words.Last().Part
             }
         }
@@ -337,8 +373,8 @@ namespace Kim {
         B_A
     }
     public class PartsConnectionRule {
-        Vars.WordForm AForm;
-        Vars.WordForm BForm;
+        public Vars.WordForm AForm;
+        public Vars.WordForm BForm;
         ABLocations ABLocation;
         Matchings Match;
 
@@ -521,6 +557,16 @@ namespace Kim {
 
             }
 
+            else if (ABLocation == ABLocations.BA)
+            for (int ai = 1; ai < parts.Count; ai++) {
+            var aPart = parts[ai];
+            var bPart = parts[ai - 1];
+
+                var relations = FindRelations(aPart, bPart, ai, ai - 1);
+                if (relations != null) ans.AddRange(relations);
+
+            }
+
             return ans.Count == 0 ? null : ans;
         }
         public List<WetPartsRelation> FindRelations(WetCollocation collocation, CollocationPart part, int left, int right) { // WetCollocationPart a, WetCollocationPart b) {
@@ -586,14 +632,21 @@ namespace Kim {
         List<PartsConnectionRule> Rules = new List<PartsConnectionRule>();
 
         private TreeBuilder() {
-            Rules.Add(new PartsConnectionRule("С", "П", ABLocations.Any, Matchings.GNC));
             Rules.Add(new PartsConnectionRule("Г", "С им", ABLocations.Any, Matchings.Number));
-            Rules.Add(new PartsConnectionRule("Г", "С", ABLocations.Any, Matchings.Number));
+            Rules.Add(new PartsConnectionRule("Г", "С", ABLocations.Any, Matchings.N));
+            // мы писали письма // письма приходили
+            // письма писали мы // письма писали мы хотим чтобы нас читали.
             Rules.Add(new PartsConnectionRule("Г", "МС им", ABLocations.Any, Matchings.Number | Matchings.Litso));
+            Rules.Add(new PartsConnectionRule("Г", "МС", ABLocations.Any, Matchings.N));
+            Rules.Add(new PartsConnectionRule("Г", "МС-П", ABLocations.Any, Matchings.N));
+            Rules.Add(new PartsConnectionRule("С", "П", ABLocations.Any, Matchings.GNC));
             Rules.Add(new PartsConnectionRule("С", "ПРЕДЛ", ABLocations.Any, Matchings.N));
+            Rules.Add(new PartsConnectionRule("С", "ЧИСЛ", ABLocations.BA, Matchings.N));
             Rules.Add(new PartsConnectionRule("Г", "ПРЕДЛ", ABLocations.Any, Matchings.N));
             Rules.Add(new PartsConnectionRule("ПРЕДЛ", "С", ABLocations.A_B, Matchings.N));
             Rules.Add(new PartsConnectionRule("ПРЕДЛ", "МС", ABLocations.A_B, Matchings.N));
+            Rules.Add(new PartsConnectionRule("ПОСЛЕЛ", "МС", ABLocations.BA, Matchings.N));
+            Rules.Add(new PartsConnectionRule("ПОСЛЕЛ", "С", ABLocations.BA, Matchings.N));
             Rules.Add(new PartsConnectionRule("Г", "Н", ABLocations.Any, Matchings.N));
             Rules.Add(new PartsConnectionRule("Н", "ПРЕДК", ABLocations.B_A, Matchings.N));
         }
@@ -608,7 +661,7 @@ namespace Kim {
                 var aForms = a.Variants[iVar].Forms;
                     for (int iForm = 0; iForm < aForms.Count; iForm++) {
                     var aForm = aForms[iForm];
-                        if (aForm.POS == PsOS.Verb) {
+                        if (aForm.POS == PsOS.Verb) { //кр прич; приедикатив
 
                             var relations = FindRelations(collocation, new CollocationPart(collocation, new WetCollocationPartID(i, iVar, iForm)), 0, collocation.Parts.Count);
                             if (relations != null) ans.AddRange(relations);
@@ -646,7 +699,7 @@ namespace Kim {
         public WetCollocationPartID A;
         public WetCollocationPartID B;
 
-        PartsConnectionRule UsedRule;
+        public PartsConnectionRule UsedRule;
 
         public float Confirmed = 0;
 
@@ -661,6 +714,27 @@ namespace Kim {
         public new string ToString {
             get {
                 return Collocation.Parts[A.PartIndex].Word + "->" + Collocation.Parts[B.PartIndex].Word;
+            }
+        }
+
+        public WetCollocationPartVariant WetPartVariantA {
+            get {
+                return Collocation.GetPartVariant(A);
+            }
+        }
+        public WetCollocationPartVariant WetPartVariantB {
+            get {
+                return Collocation.GetPartVariant(B);
+            }
+        }
+        public WetCollocationPart WetPartA {
+            get {
+                return Collocation.GetWetPart(A);
+            }
+        }
+        public WetCollocationPart WetPartB {
+            get {
+                return Collocation.GetWetPart(B);
             }
         }
     }
@@ -735,13 +809,16 @@ namespace Kim {
         }
     }
     public class WetCollocationPart {
+        public WetPartsRelation IngoingConnection = null;
+        public WetPartsRelation OutgoingConnection = null;
+
         public WetCollocation Collocation;
         public String Word;
         public List<WetCollocationPartVariant> Variants = new List<WetCollocationPartVariant>();
 
         public WetCollocationPart(String word, WetCollocation collocation) {
             Word = word;
-            var paradigms = Dictionary.ParadigmsList(word);
+            var paradigms = Brain.ParadigmsList(word);
             foreach (var paradigm in paradigms) {
                 Variants.Add(new WetCollocationPartVariant(paradigm));
             }
@@ -752,6 +829,10 @@ namespace Kim {
             get { return Variants[i]; }
         }
     }
+
+
+
+
     public class WetCollocation {
         public List<WetCollocationPart> Parts = new List<WetCollocationPart>();
         List<WetPartsRelation> Relations = new List<WetPartsRelation>();
@@ -761,11 +842,81 @@ namespace Kim {
                 Parts.Add(new WetCollocationPart(Word, this));
             }
             BuildRelations();
+            ProcessPreposotions();
+            ProcessPostpositions();
             GetTrees();
 
             //FilterParadigms();
         }
 
+        private void ProcessPostpositions() {
+            for (int j = 0; j < Relations.Count; j++) {
+                var r = Relations[j];
+                if (r.UsedRule.AForm.POS == PsOS.Postposition) {
+                //if (r.WetPartVariantA.Forms[0].POS == PsOS.Postposition) {
+                    r.WetPartA.OutgoingConnection = r;
+                    r.WetPartB.IngoingConnection = r;
+
+                    RemoveAllRelations(r.A.PartIndex, r.B.PartIndex);
+
+                    ProcessPreposotions();
+                }
+            }
+        }
+        private void ProcessPreposotions() {
+            for (int i = 0; i < Parts.Count; i++) {
+                var a = Parts[i];
+                if (a.OutgoingConnection == null)
+                    if (a.Variants[0].Forms[0].POS == PsOS.Proposition) {
+                        int min = Parts.Count;
+                        WetPartsRelation minRelation = null;
+                        bool shit = false;
+
+                        for (int j = 0; j < Relations.Count; j++) {
+                            var r = Relations[j];
+                            if (r.A.PartIndex == i && Parts[r.A.PartIndex].IngoingConnection == null) {
+                                min = r.B.PartIndex;
+                                minRelation = r;
+                            }
+                        }
+
+                        if (minRelation != null) {
+                            for (int j = i+1; j < min; j++) {
+                                var pj = Parts[j];
+                                if (pj.OutgoingConnection == null)
+                                    for (int k = 0; k < pj.Variants.Count; k++) {
+                                        if (pj.Variants[k].Forms[0].POS == PsOS.Proposition) {
+                                            shit = true;
+                                        }
+                                    }
+                            }
+
+                            if (shit == false) {
+                                a.OutgoingConnection = minRelation;
+                                var b = Parts[minRelation.B.PartIndex];
+                                b.IngoingConnection = minRelation;
+                                
+                                RemoveAllRelations(i, minRelation.B.PartIndex);
+
+                                Relations.RemoveAll(ir => (ir.A.PartIndex == minRelation.B.PartIndex && ir.B.PartIndex <= i));
+
+                                ProcessPreposotions();
+                            }
+                        }
+                        else {
+                            if (a.Variants.Count == 1) {
+                                //HZ
+                            }
+                        }
+                    }
+            }
+        }
+        
+        void RemoveAllRelations(int A, int B) {
+            Relations.RemoveAll(i => (i.A.PartIndex == A || i.B.PartIndex == B));
+        }
+
+        // повествовате-льных, побудитель-ных, вопроситель-ных предложений, 
         private void GetTrees() {
             WetCollocationPartID Predicate = null;
 
@@ -780,6 +931,7 @@ namespace Kim {
 
                             List<WetPartsRelation> TreeRelations = new List<WetPartsRelation>();
                             FindChildren(new CollocationPart(this, new WetCollocationPartID(i, iVar, iForm)), TreeRelations, 0, Parts.Count);
+                            
                             //var relations = FindRelations(new CollocationPart(collocation, new WetCollocationPartID(i, iVar, iForm)), 0, collocation.Parts.Count);
                             //if (relations != null) ans.AddRange(relations);
 
@@ -792,13 +944,21 @@ namespace Kim {
         private void FindChildren(CollocationPart part, List<WetPartsRelation> TreeRelations, int l, int r) {
             List<WetPartsRelation> NewRelations = new List<WetPartsRelation>();
 
-            foreach (var p in Relations.Except(TreeRelations)) {
+            foreach (var ir in Relations.Except(TreeRelations)) {
             //for (int i = l; i < r; i++) {
                 //var p = Relations[i];
-                if (p.B.PartIndex >= l && p.B.PartIndex < r)
-                if (p.A == part.PWetCollocationPartID) {
-                    var s = p.ToString;
-                    NewRelations.Add(p);
+                if (ir.B.PartIndex >= l && ir.B.PartIndex < r)
+                if (ir.A == part.PWetCollocationPartID) {
+                    var s = ir.ToString;
+                    
+                    var altR = NewRelations.Find(jr => jr.B.PartIndex == ir.B.PartIndex);
+                    if (altR == null) {
+                        NewRelations.Add(ir);
+                    }
+                    else if (altR.WetPartVariantB.Paradigm.WordWeight < ir.WetPartVariantB.Paradigm.WordWeight) {
+                        NewRelations.Remove(altR);
+                        NewRelations.Add(ir);
+                    }
                 }
             }
 
@@ -850,7 +1010,9 @@ namespace Kim {
 
             return new CollocationPart(wcp.Word, wcpv.Paradigm, wcpv.Forms[id.FormIndex], this, id);
         }
-        
+        public WetCollocationPart GetWetPart(WetCollocationPartID id) {
+            return Parts[id.PartIndex];
+        }
         public WetCollocationPartVariant GetPartVariant(WetCollocationPartID id) {
             WetCollocationPartVariant wcpv = Parts[id.PartIndex].Variants[id.VariantIndex];
             return wcpv;
@@ -862,6 +1024,8 @@ namespace Kim {
     }
 
     public class CollocationPart {
+        public Word DictWord;
+
         public String Word;
         public IParadigm Paradigm;
         public Vars.WordForm Form;
@@ -924,11 +1088,18 @@ namespace Kim {
 
     //скушал спелого сочного яблока
     class Collocation {
-        List<ConcreteWord> Words;
+        List<CollocationPart> Words;
 
+        public Collocation(WetCollocation wetCollocation) {
+            ProcessWetCollocation(wetCollocation);
+        }
         public Collocation(String collocation = "") {
-            foreach (String Word in collocation.Split(' ')) {
-                //Words.Add(ConcreteWord Dictionary.Instance.GetWord(Word));
+            ProcessWetCollocation(new WetCollocation(collocation));
+        }
+
+        public void ProcessWetCollocation(WetCollocation wetColl) {
+            foreach (var word in wetColl.Parts) {
+                //Words.Add(new CollocationPart(  ConcreteWord Dictionary.Instance.GetWord(Word));
             }
         }
     }
@@ -947,26 +1118,24 @@ namespace Kim {
     //        }
     //    }
     //}
-    class Dictionary {
-        private static Dictionary instance;
-        public static Dictionary Instance {
+    class Brain {
+        private static Brain instance;
+        public static Brain Instance {
             get {
                 if (instance == null) {
-                    instance = new Dictionary();
+                    instance = new Brain();
                 }
                 return instance;
             }
         }
 
         ILemmatizer Lemmatizer;
-        public List<Word> Words = new List<Word>();
-        
         public string rgt;
-           
-        public Dictionary() {
-            var rmlPath = System.Environment.GetEnvironmentVariable("RML");
 
-//            Console.Write("\tRML directory (" + rmlPath + "): ");
+        public List<Word> Words = new List<Word>();
+
+        public Brain() {
+            var rmlPath = System.Environment.GetEnvironmentVariable("RML");
 
             if (string.IsNullOrEmpty(rmlPath)) {
                 var newRmlPath = "";
@@ -994,13 +1163,7 @@ namespace Kim {
             }
         }
 
-        //public Word GetWord(String word) {
-
-        //}
         public List<Word> GetWords(String word) {
-            var paradigmList = Lemmatizer.CreateParadigmCollectionFromForm(word, true, true);
-
-
 
             return null;
         }
@@ -1069,15 +1232,16 @@ namespace Kim {
 
                 Word ans = new Word(p, word);
 
-                switch (ans.POS()) {
+                switch (ans.POS) {
                 case PsOS.Noun:
-                    ans = new Noun();
+                    ans = new Noun(p, word);
                     break;
                 case PsOS.Adj:
-                    ans = new Adj();
+                    ans = new Adj(p, word);
                     break;
-                case PsOS.Verb:
-                    ans = new Verb();
+                case PsOS.Verb :
+                case PsOS.Infinitive :
+                    ans = new Verb(p, word);
                     break;
                 }
                 Instance.Words.Add(ans);

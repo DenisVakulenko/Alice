@@ -1,4 +1,4 @@
-﻿<Window x:Class="Kim.MainWindow"
+﻿<Window x:Class="Alice.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MainWindow" Height="429.16" Width="666.567" Loaded="Window_Loaded">

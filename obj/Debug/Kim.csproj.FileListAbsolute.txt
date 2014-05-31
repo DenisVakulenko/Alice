@@ -54,3 +54,14 @@ D:\_Diploma\_Kim\bin\Debug\Kim.exe
 D:\_Diploma\_Kim\bin\Debug\Kim.pdb
 D:\_Diploma\_Kim\bin\Debug\ClassLibrary1.dll
 D:\_Diploma\_Kim\bin\Debug\ClassLibrary1.pdb
+D:\_Diploma\Alice\bin\Debug\Kim.exe.config
+D:\_Diploma\Alice\obj\Debug\Kim.exe
+D:\_Diploma\Alice\obj\Debug\Kim.pdb
+D:\_Diploma\Alice\obj\Debug\Kim.csprojResolveAssemblyReference.cache
+D:\_Diploma\Alice\obj\Debug\MainWindow.baml
+D:\_Diploma\Alice\obj\Debug\MainWindow.g.cs
+D:\_Diploma\Alice\obj\Debug\App.g.cs
+D:\_Diploma\Alice\obj\Debug\Kim_MarkupCompile.cache
+D:\_Diploma\Alice\obj\Debug\Kim.g.resources
+D:\_Diploma\Alice\obj\Debug\Kim.Properties.Resources.resources
+D:\_Diploma\Alice\obj\Debug\Kim.csproj.GenerateResource.Cache

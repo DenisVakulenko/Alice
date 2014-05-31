@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kim", "Kim.csproj", "{6A3632D1-09AA-40F2-91D7-07DCC9791041}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AliceCore", "AliceCore.csproj", "{6A3632D1-09AA-40F2-91D7-07DCC9791041}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Lemmatizer", "..\ClassLibrary1\Lemmatizer.csproj", "{81A573BC-3B91-49FC-950C-4DF780A34C8C}"
 EndProject

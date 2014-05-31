@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Kim {
+namespace Alice {
     //class ContextedFuzzyData<T, ContextT> {
     //    ContextedFuzzyData(T data) {
     //        Data = data;

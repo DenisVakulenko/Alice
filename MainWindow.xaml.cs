@@ -18,7 +18,7 @@ using System.Text.RegularExpressions;
 
 using LemmatizerNET;
 
-namespace Kim {
+namespace Alice {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
@@ -28,7 +28,7 @@ namespace Kim {
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e) {
-            var Dict = new Dictionary();
+            var Dict = new Brain();
 
             TreeViewItem treeItem = null;
 
@@ -154,7 +154,7 @@ namespace Kim {
             //}
         }
 
-        Kim.Dictionary Dict = new Dictionary();
+        Alice.Brain Dict = new Brain();
         private void Button_Click_1(object sender, RoutedEventArgs e) {
             //var c = new WetCollocation(
             //"поздно вечером уставший я скушал спелого сочного яблока из бабушкиного " +
@@ -169,41 +169,79 @@ namespace Kim {
 
             //прибежал из сада - можно
 
-            var write = Dictionary.GetWord("писал");
+            var write = Brain.GetWord("писал");
             write.AskQ.Add(new Word.QItem("что", new String[]{"сообщение", "экзамен", "письмо"}));
-            write.AskQ.Add(new Word.QItem("про что", new String[] { "экзамены", "выходные", "репетицию", "событие" }));
+            write.AskQ.Add(new Word.QItem("про_что", new String[] { "экзамены", "выходные", "репетицию", "событие" }));
             write.AskQ.Add(new Word.QItem("о ком"));
             write.AskQ.Add(new Word.QItem("как", new String[]{"быстро"})); // скорость // поздно - и как? и когда?
             write.AskQ.Add(new Word.QItem("чем"));
             write.AskQ.Add(new Word.QItem("когда", new String[]{"вчера", "вечером", "завтра"}));
-            write.AskQ.Add(new Word.QItem("в чем", new String[]{"классе", "универе", "блокноте"}));
-            write.AskQ.Add(new Word.QItem("в что", new String[]{"обед", "блокнот", "тетрадь"}));
+            write.AskQ.Add(new Word.QItem("в_чем", new String[]{"классе", "универе", "блокноте"}));
+            write.AskQ.Add(new Word.QItem("в_что", new String[]{"обед", "блокнот", "тетрадь"}));
             write.AskQ.Add(new Word.QItem("где"));
             write.AskQ.Add(new Word.QItem("кто", new String[]{"человек"}));
 
-            var name = Dictionary.GetWord("человек");
-            name.AskQ.Add(new Word.QItem("имя", new String[] { "Лёха", "Макс", "Денис", "Ден" }));
-            name.AskQ.Add(new Word.QItem("фамилия", new String[] { "Mogilnikov", "Наумов", "Вакуленко", "Просуков" }));
-            name.AskQ.Add(new Word.QItem("возраст", new String[] { "промежуток времени" }));
-            name.AskQ.Add(new Word.QItem("", new String[] { "друг", "брат" }));
+            Noun human = (Noun)Brain.GetWord("человек");
+            human.AskQ.Add(new Word.QItem("имя", new String[] { "Лёха", "Макс", "Денис", "Ден" }));
+            human.AskQ.Add(new Word.QItem("фамилия", new String[] { "Mogilnikov", "Наумов", "Вакуленко", "Просуков" }));
+            human.AskQ.Add(new Word.QItem("возраст", new String[] { "промежуток времени" }));
+            human.AskQ.Add(new Word.QItem("_", new String[] { "друг", "брат" }));
+            
+            human.ThisCan.Add(new WordConnection<Verb>("писать", "что делать"));
+            human.WeCan.Add(new WordConnection<Verb>("написать", "что сделать"));
 
-            Noun Lex = (Noun)Dictionary.GetWord("Лёха");
+            human.GeneralizeParents.Add(Brain.GetWord("животное"));
+
+            // положить в коробку
+            // жить в коробке
+
+            // оказался в стоявшем на высоком холме доме.
+            // оказался в постаревшем на высоком холме доме.
+
+            // на холме
+            // постаревшем на холме
+
+
+            var about = Brain.GetWord("про");
+            var insmth = Brain.GetWord("в");
+            var after = Brain.GetWord("после");
+            
+            Noun Lex = (Noun)Brain.GetWord("Лёха");
             //Lex.
             //Lex.a
 
-            //write.AskQ.Add(Dictionary.GetWord(""));
+            //write.AskQ.Add(Dictionary.GetWord("j"));
             
             var c1 = new WetCollocation("что там написал леха");
             var c2 = new WetCollocation("что там неделю назад писали про экзамены");
-            var c3 = new WetCollocation("спроси его когда мне идти сдавать документы");
+            //var c3 = new WetCollocation("спроси его когда мне идти сдавать документы");
+
+            var c44 = new WetCollocation("собака с длинной шерстью");
+
+            //("Я увидел, что буря утихла");
             var c4 = new WetCollocation("прочитай то что написали");
             var c5 = new WetCollocation("кто написал");
             var c6 = new WetCollocation("ответь что я занят");
 
-            Dictionary.GetWord("коты");
-            Dictionary.GetWord("кота");
-            Dictionary.GetWord("кот");
-            Dictionary.GetWord("кота");
+            var c7 = new WetCollocation("прозвенел звонок веселый начинается урок");
+            var c8 = new WetCollocation("прозвенел звонок веселый урок начинается");
+
+
+            //1) Возьми книгу, что лежит на столе. 
+            //2) Я знаю, что нам задали на дом. 
+            //3) Как хорошо, что завтра начинаются каникулы. 
+            //4) Что ты здесь делаешь?
+
+            //ответ 3 (соединительный союз в сложноподчиненном предложении) 
+            //в 1 оно является местоимением (подлежащим в сложном предложении) 
+            //во 2 - местоимением (дополнение) 
+            //в 4 - вопросительным местоимением (обстоятельство)
+
+
+            Brain.GetWord("коты");
+            Brain.GetWord("кота");
+            Brain.GetWord("кот");
+            Brain.GetWord("кота");
 
             //Dict.GetWord("котик").AddRule("ласковый кот");
             //Dict.GetWord("котик").AddRule("добрый кот");

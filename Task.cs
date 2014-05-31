@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Kim {
+namespace Alice {
     class TextCommandParsed {
         List<Word> Words;
 

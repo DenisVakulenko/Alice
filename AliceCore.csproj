@@ -7,7 +7,7 @@
     <ProjectGuid>{6A3632D1-09AA-40F2-91D7-07DCC9791041}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Kim</RootNamespace>
+    <RootNamespace>Alice</RootNamespace>
     <AssemblyName>Kim</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
