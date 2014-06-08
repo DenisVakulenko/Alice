@@ -154,8 +154,73 @@ namespace Alice {
             //}
         }
 
+
+        public void TestWordsComparator() {
+            Brain.Instance.AddSynonyms(Brain.GetWord("красный"), Brain.GetWord("розовый"), 0.5);
+            Brain.Instance.AddSynonyms(Brain.GetWord("красный"), Brain.GetWord("фиолетовый"), 0.5);
+
+            var cmp1 = Brain.GetWord("красный").CompareTo(Brain.GetWord("красный"));
+            var cmp2 = Brain.GetWord("красный").CompareTo(Brain.GetWord("фиолетовый"));
+            var cmp3 = Brain.GetWord("розовый").CompareTo(Brain.GetWord("фиолетовый"));
+
+            Brain.Instance.AddSynonyms(Brain.GetWord("кот"), Brain.GetWord("котик"), 0.9);
+            Brain.Instance.AddSynonyms(Brain.GetWord("собака"), Brain.GetWord("пес"), 0.8);
+
+            ((Noun)Brain.GetWord("кот")).AddGiperonim(Brain.GetWord("животное"));
+            ((Noun)Brain.GetWord("собака")).AddGiperonim(Brain.GetWord("животное"));
+
+            var cmp4 = Brain.GetWord("кот").CompareTo(Brain.GetWord("животное"));
+            var cmp5 = Brain.GetWord("собака").CompareTo(Brain.GetWord("животное"));
+            var cmp6 = Brain.GetWord("котик").CompareTo(Brain.GetWord("животное"));
+        }
+
+        public void TestObjectsComparator() {
+            var obj1 = new Object();
+            obj1.AddProperty("красный");
+
+            var obj2 = new Object();
+            obj2.AddProperty("розовый");
+
+            var cmp1 = obj1.CompareTo(obj2);
+
+
+            var obj3 = new Object("кот");
+            obj3.AddProperty("фиолетовый");
+
+            var obj4 = new Object("собака");
+            obj4.AddProperty("розовая");
+
+            var obj5 = new Object("животное");
+
+            var obj6 = new Object("пес");
+            obj6.AddProperty("розовый");
+            
+            var cmp2 = obj3.CompareTo(obj4);
+            var cmp3 = obj3.CompareTo(obj5);
+            var cmp4 = obj4.CompareTo(obj5);
+            var cmp5 = obj5.CompareTo(obj4);
+            var cmp44 = obj6.CompareTo(obj5);
+
+
+            obj5.AddProperty("красный");
+
+            var cmp6 = obj3.CompareTo(obj4);
+            var cmp7 = obj3.CompareTo(obj5);
+            var cmp8 = obj4.CompareTo(obj5);
+            var cmp9 = obj5.CompareTo(obj4);
+            var cmp10 = obj6.CompareTo(obj5);
+        }
+
         Alice.Brain Dict = new Brain();
+        Note i = new Note(null, "Первая тестовая заметка", "Тест");
         private void Button_Click_1(object sender, RoutedEventArgs e) {
+
+            //i.Show();
+            //i.Show();
+
+            TestWordsComparator();
+            TestObjectsComparator();
+            
             //var c = new WetCollocation(
             //"поздно вечером уставший я скушал спелого сочного яблока из бабушкиного " +
             //"сада в электричке после долгого дня");
@@ -190,7 +255,12 @@ namespace Alice {
             human.ThisCan.Add(new WordConnection<Verb>("писать", "что делать"));
             human.WeCan.Add(new WordConnection<Verb>("написать", "что сделать"));
 
-            human.GeneralizeParents.Add(Brain.GetWord("животное"));
+
+            
+
+            
+
+            //human.GeneralizeParents.Add(Brain.GetWord("животное"));
 
             // положить в коробку
             // жить в коробке
@@ -214,7 +284,7 @@ namespace Alice {
             
             var c1 = new WetCollocation("что там написал леха");
             var c2 = new WetCollocation("что там неделю назад писали про экзамены");
-            //var c3 = new WetCollocation("спроси его когда мне идти сдавать документы");
+            var c3 = new WetCollocation("спроси его когда мне идти сдавать документы");
 
             var c44 = new WetCollocation("собака с длинной шерстью");
 
@@ -222,10 +292,16 @@ namespace Alice {
             var c4 = new WetCollocation("прочитай то что написали");
             var c5 = new WetCollocation("кто написал");
             var c6 = new WetCollocation("ответь что я занят");
+            var c16 = new WetCollocation("ответь то что я занят");
 
             var c7 = new WetCollocation("прозвенел звонок веселый начинается урок");
             var c8 = new WetCollocation("прозвенел звонок веселый урок начинается");
+            var c10 = new WetCollocation("звонок прозвенел веселый начинается урок");
 
+            var c9 = new WetCollocation("кот вася который пришел домой ночью спал мертвым сном");
+
+            // он сделал те задания, что помогло ему сдать экзамен.
+            // он сделал те задания, что дал ему учитель.
 
             //1) Возьми книгу, что лежит на столе. 
             //2) Я знаю, что нам задали на дом. 
@@ -237,12 +313,15 @@ namespace Alice {
             //во 2 - местоимением (дополнение) 
             //в 4 - вопросительным местоимением (обстоятельство)
 
+            
+            // кот вася который пришел домой ночью [и] спал мертвым сном весь день получил веником по попе.
 
             Brain.GetWord("коты");
             Brain.GetWord("кота");
             Brain.GetWord("кот");
             Brain.GetWord("кота");
 
+            
             //Dict.GetWord("котик").AddRule("ласковый кот");
             //Dict.GetWord("котик").AddRule("добрый кот");
             //Dict.GetWord("котик").AddRule("милый кот");
@@ -301,7 +380,7 @@ namespace Alice {
             // поздно parent поздний
 
 
-            SpecifiedNoun Msg = new SpecifiedNoun("Сообщение");
+            Object Msg = new Object("Сообщение");
             Msg.AddProperty("Alexey Mogilnikov", "Автор");
             Msg.AddProperty("Привет, как дела?", "Содержание");
             Msg.AddProperty("18:23", "Время");

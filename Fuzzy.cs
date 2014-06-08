@@ -19,9 +19,32 @@ namespace Alice {
         protected T _Data;
         protected Double _Confidence = 0;
 
-        Int16 Correct = 0;
-        Int16 NoMatter = 0;
-        Int16 Incorrect = 0;
+        Int16 NUsed = 0;
+        Int16 NCorrect = 0;
+        Int16 NWrong = 0;
+
+        public Double Confidence {
+            get {
+                return _Confidence;
+            }
+            set {
+                _Confidence = value;
+                
+                NUsed = 0;
+                NCorrect = 0;
+                NWrong = 0;
+            }
+        }
+
+        public void Used() {
+            NUsed++;
+        }
+        public void WasCorrect() {
+            NCorrect++;
+        }
+        public void WasWrong() {
+            NWrong++;
+        }
 
         public FuzzyData() {
         }

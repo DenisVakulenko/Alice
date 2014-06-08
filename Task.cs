@@ -44,6 +44,10 @@ namespace Alice {
         
     }
 
+    interface ITask {
+
+    }
+
     class Task {
         int ProgID;
         int ID;
