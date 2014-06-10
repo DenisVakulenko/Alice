@@ -93,7 +93,7 @@ namespace Alice {
     }
     
 
-    public partial class taskNotes : Window, ITask {
+    public partial class taskNotes : Alice.Task {
         public List<Note> Notes = new List<Note>();
 
         public taskNotes() {
@@ -103,23 +103,27 @@ namespace Alice {
 
             Notes.Add(new Note(this, "первая тестовая заметка", "Тест!"));
             Notes.Add(new Note(this, "вторая первая тестовая заметка", "Тест2"));
+
+            UpdateNotes();
+
+            System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+            dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 2);
+            dispatcherTimer.Start();
         }
 
-        public delegate void TaskActionExecuter(Predicat predicat);
 
-        public class TaskAction {
-            public Predicat PredicatPattern;
-            public TaskActionExecuter Executer;
+        private void dispatcherTimer_Tick(object sender, EventArgs e) {
+            UpdateNotes();
+        }
 
-            public TaskAction(Predicat predicatPattern, TaskActionExecuter executer) {
-                PredicatPattern = predicatPattern;
-                Executer = executer;
+
+        public void UpdateNotes() {
+            stackNotes.Children.Clear();
+            foreach (var i in Notes) {
+                stackNotes.Children.Add(new ucNoteMinimized(i));
             }
         }
-
-        public List<TaskAction> Actions = new List<TaskAction>();
-
-        
 
         private Predicat prFind;
 
@@ -151,13 +155,14 @@ namespace Alice {
             prFix.AddProperty("что");
 
             prFind = new Predicat("найди");
-            prFind.Action.AddSynonym("покажи", 0.8);
+            prFind.Action.AddSynonym("покажи", 0.6);
             prFind.Action.AddSynonym("открой", 0.6);
             prFind.AddProperty("что");
 
-            Actions.Add(new TaskAction(prShow, ActionShow));
-            Actions.Add(new TaskAction(prHide, ActionHide));
-            Actions.Add(new TaskAction(prFind, ActionFind));
+            
+            AddAction(prShow, ActionShow);
+            AddAction(prHide, ActionHide);
+            AddAction(prFind, ActionFind);
         }
 
 
@@ -166,29 +171,10 @@ namespace Alice {
         }
 
         private void Button_Click(object sender, RoutedEventArgs e) {
-
+            Notes.Add(new Note(this, "", ""));
+            Notes.Last().Show();
         }
 
-        public Double CanExecute(Predicat pr) {
-            Double conf = 0;
-            Double c;
-
-            foreach (var i in Actions) {
-                c = pr.CompareTo(i.PredicatPattern);
-                if (c > conf) {
-                    conf = c;
-                }
-            }
-
-            return conf;
-        }
-        
-        public void ActionShow(Predicat p) {
-            this.Show();
-        }
-        public void ActionHide(Predicat p) {
-            this.Hide();
-        }
         public void ActionFind(Predicat pr) {
             var p = pr.FindProperty(new Property(new Object("что"), Property.ObjectPropertyType.NoValue_NoType));
             if (p == null)
@@ -205,24 +191,6 @@ namespace Alice {
             AliceGUIManager.TellText(note.ToString());
         }
 
-        public Double Execute(Predicat pr) {
-            Double conf = 0;
-            Double c;
-
-            TaskAction a = null;
-
-            foreach (var i in Actions) {
-                c = pr.CompareTo(i.PredicatPattern);
-                if (c > conf) {
-                    conf = c;
-                    a = i;
-                }
-            }
-
-            a.Executer(pr);
-
-            return 1;
-        }
         //public Property AnsverTo(Predicat p, out Double conf) {
         //    Double maxConf;
         //    Property bstAns;
@@ -247,9 +215,5 @@ namespace Alice {
             return bstNote;
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
-            e.Cancel = true;
-            this.Hide();
-        }
     }
 }

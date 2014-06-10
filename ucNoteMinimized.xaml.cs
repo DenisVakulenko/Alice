@@ -18,8 +18,43 @@ namespace Alice {
     /// Interaction logic for ucNoteMinimized.xaml
     /// </summary>
     public partial class ucNoteMinimized : UserControl {
-        public ucNoteMinimized() {
+        public Note _Note;
+
+        public Note Note {
+            get {
+                return _Note;
+            }
+            set {
+                _Note = value;
+            }
+        }
+
+        public String Header {
+            get {
+                return _Note.Header;
+            }
+            set {
+                _Note.Header = value;
+            }
+        }
+        public String Text {
+            get {
+                return _Note.Text;
+            }
+            set {
+                _Note.Text = value;
+            }
+        }
+
+        public ucNoteMinimized(Note note) {
             InitializeComponent();
+
+            if (note == null)
+                throw new Exception("exc: note == null");
+            
+            _Note = note;
+
+            Main.DataContext = this;
         }
     }
 }

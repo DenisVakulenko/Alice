@@ -21,3 +21,7 @@ D:\_Diploma\Alice\obj\Debug\taskNotes.g.cs
 D:\_Diploma\Alice\obj\Debug\ucNoteMinimized.g.cs
 D:\_Diploma\Alice\obj\Debug\taskDialogBox.baml
 D:\_Diploma\Alice\obj\Debug\taskDialogBox.g.cs
+D:\_Diploma\Alice\obj\Debug\taskMailBox.baml
+D:\_Diploma\Alice\obj\Debug\taskMailBox.g.cs
+D:\_Diploma\Alice\obj\Debug\GeneratedInternalTypeHelper.g.cs
+D:\_Diploma\Alice\obj\Debug\Alice_MarkupCompile.lref

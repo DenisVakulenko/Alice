@@ -337,7 +337,7 @@ namespace Alice {
                 return conf;
 
             foreach (var i in Giperonims) {
-                conf = Math.Max(conf, i.CompareTo(n)); //, exc));
+                conf = Math.Max(conf, 0.99 * i.CompareTo(n)); //, exc));
 
                 if (conf == 1 || conf == -1)
                     return conf;

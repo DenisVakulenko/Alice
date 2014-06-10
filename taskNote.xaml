@@ -9,7 +9,7 @@
     <Grid x:Name="Main">
 
         <TextBox x:Name="txtHeader" TextWrapping="Wrap" VerticalAlignment="Top" Height="23" Margin="10,10,100,0" FontWeight="Bold" Text="{Binding Header}" BorderThickness="1,0,0,0" BorderBrush="{x:Null}"/>
-        <TextBox TextWrapping="WrapWithOverflow" Text="{Binding Text}" Margin="10,46,10,10" BorderBrush="{x:Null}" BorderThickness="1,0,0,0"/>
+        <TextBox Text="{Binding Text}" Margin="10,46,10,10" BorderBrush="{x:Null}" BorderThickness="1,0,0,0" TextChanged="TextBox_TextChanged"/>
 
     </Grid>
 </Window>

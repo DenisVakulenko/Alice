@@ -69,9 +69,13 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Fuzzy.cs" />
+    <Compile Include="Margin.cs" />
     <Compile Include="Task.cs" />
     <Compile Include="taskDialogBox.xaml.cs">
       <DependentUpon>taskDialogBox.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="taskMailBox.xaml.cs">
+      <DependentUpon>taskMailBox.xaml</DependentUpon>
     </Compile>
     <Compile Include="taskNote.xaml.cs">
       <DependentUpon>taskNote.xaml</DependentUpon>
@@ -97,6 +101,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="taskDialogBox.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="taskMailBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

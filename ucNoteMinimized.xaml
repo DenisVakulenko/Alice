@@ -4,11 +4,11 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
-             d:DesignHeight="300" d:DesignWidth="300" BorderThickness="3" BorderBrush="#FF3399FF">
-    <Grid>
-        <Label Content="Label" Margin="10,10,10,0" VerticalAlignment="Top" FontWeight="Bold"/>
+             d:DesignHeight="300" d:DesignWidth="300" BorderThickness="1" BorderBrush="#FFB2B2B2" Margin="5,5,5,0">
+    <Grid x:Name="Main">
+        <Label x:Name="lblHeader" Content="{Binding Header}" Margin="10,10,10,0" VerticalAlignment="Top" FontWeight="Bold"/>
         <Label Margin="10,41,10,10">
-            <TextBlock TextWrapping="WrapWithOverflow">Lorem hjdf gkjhdfs gjhdf jkgdsf jkghdfs jgh dfjhsg jdhkjdsfgh jkdfsgh kjdfsgh kjgfds gdfsg dfsgipsum</TextBlock>
+            <TextBlock x:Name="lblText" Text="{Binding Text}" TextWrapping="WrapWithOverflow"/>
         </Label>
     </Grid>
 </UserControl>
