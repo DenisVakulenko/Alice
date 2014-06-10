@@ -62,7 +62,7 @@ namespace Alice {
     }
     
 
-    public partial class taskNotes : Window {
+    public partial class taskNotes : Window, ITask {
         public List<Note> Notes = new List<Note>();
 
         public taskNotes() {
@@ -78,6 +78,43 @@ namespace Alice {
 
         private void Button_Click(object sender, RoutedEventArgs e) {
 
+        }
+
+        public Double CanExecute(Predicat pr) {
+            return 0;
+        }
+        public Double Execute(Predicat pr) {
+            if (pr.Action.CompareTo(Brain.Word("найди")) > 0.9) {
+                var p = pr.FindProperty(new Property(new Object("что"), Property.ObjectPropertyType.NoValue_NoType));
+                Double conf;
+                var a = Find(p.ObjectValue, out conf);
+
+                AliceGUIManager.TellText(a.ToString());
+
+                return 1;
+            }
+            return 0;
+        }
+        //public Property AnsverTo(Predicat p, out Double conf) {
+        //    Double maxConf;
+        //    Property bstAns;
+        //    foreach (var i in Notes) {
+        //        var ans = i.ConvertToNL().CompareTo(p);
+        //    }
+        //    return bstAns;
+        //}
+        public Object Find(Object p, out Double conf) {
+            conf = 0;
+            Object bstAns = null;
+            foreach (var i in Notes) {
+                var obj = i.ConvertToNL();
+                var c = i.ConvertToNL().CompareTo(p);
+                if (conf < c) {
+                    conf = c;
+                    bstAns = obj;
+                }
+            }
+            return bstAns;
         }
     }
 }

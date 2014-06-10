@@ -44,20 +44,19 @@ namespace Alice {
         
     }
 
-    interface ITask {
-
+    public interface ITask {
+        Double CanExecute(Predicat pr);
+        Double Execute(Predicat pr);
+        //Property AnsverTo(Predicat pr, out Double conf);
     }
 
-    class Task {
+    public class Task { //: ITask {
         int ProgID;
         int ID;
-
 
         // enum Contexts;
         // CurrentContext;
         // Actions;
-        
-
     }
 
     class Messenger : Task {

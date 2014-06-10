@@ -19,3 +19,5 @@ D:\_Diploma\Alice\obj\Debug\ucNoteMinimized.baml
 D:\_Diploma\Alice\obj\Debug\taskNote.g.cs
 D:\_Diploma\Alice\obj\Debug\taskNotes.g.cs
 D:\_Diploma\Alice\obj\Debug\ucNoteMinimized.g.cs
+D:\_Diploma\Alice\obj\Debug\taskDialogBox.baml
+D:\_Diploma\Alice\obj\Debug\taskDialogBox.g.cs

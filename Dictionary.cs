@@ -55,8 +55,8 @@ namespace Alice {
             _Confidence = 1;
         }
         public WordConnection(String word, String binder) {
-            _Data = (T)Brain.GetWord(word);
-            _Binder = Brain.GetWord(binder);
+            _Data = (T)Brain.Word(word);
+            _Binder = Brain.Word(binder);
             _Confidence = 1;
         }
 
@@ -136,7 +136,7 @@ namespace Alice {
 
 
     public class Word {
-        String Spelling;
+        public String Spelling;
         // String Root;
         IParadigm _Paradigm;
         public List<String> VerifiedVariants = new List<string>();
@@ -159,12 +159,12 @@ namespace Alice {
                 }
             }
             public QItem(String q) {
-                Q = Brain.GetWord(q);
+                Q = Brain.Word(q);
             }
             public QItem(String q, String[] verified) {
-                Q = Brain.GetWord(q);
+                Q = Brain.Word(q);
                 foreach (var i in verified) {
-                    VerifiedAnsvers.Add(Brain.GetWord(i));
+                    VerifiedAnsvers.Add(Brain.Word(i));
                 }
             }
         }
@@ -249,6 +249,10 @@ namespace Alice {
         public void AddSynonym(Word word) {
             Brain.Instance.AddSynonyms(this, word);
         }
+        public void AddSynonym(String word) {
+            Brain.Instance.AddSynonyms(this, Brain.Word(word));
+        }
+        
         public void AddRelative(Word word) {
             foreach (var i in Relatives)
                 if (i.Word == word)
@@ -261,14 +265,6 @@ namespace Alice {
             Relatives.Add(new WordConnection(word));
         }
         public void AddRule(Object word) {
-            foreach (var i in Relatives)
-                if (i.Word == word.Word)
-                    return;
-
-            //foreach (var i in Synonyms)
-            //    if (i.Word == word.Word)
-            //        return;
-
             //Rules.Add(new Connection<SpecifiedWord>(word));
         }
 
@@ -324,6 +320,14 @@ namespace Alice {
                 return;
 
             Giperonims.Add(word);
+        }
+        public void AddGiperonim(String word) {
+            var w = Brain.Word(word);
+
+            if (Giperonims.Contains(w))
+                return;
+
+            Giperonims.Add(w);
         }
 
         public override double CompareTo(Word n, List<Word> exc = null) {
@@ -392,7 +396,7 @@ namespace Alice {
         public Adj(IParadigm form) : base(form) { }
     }
 
-    class Property {
+    public class Property {
         public Object Name { get; set; }
 
         public String UnpercievedValue { get; set; }
@@ -403,6 +407,7 @@ namespace Alice {
         public ObjectPropertyType Type;
 
         public enum ObjectPropertyType {
+            NoValue_NoType,
             UnpercievedValue,
             Object,
             Word,
@@ -411,6 +416,10 @@ namespace Alice {
             Int
         }
 
+        public Property(Object property, ObjectPropertyType type) {
+            Name = property;
+            Type = type;
+        }
         public Property(Object property, String unprValue) {
             Name = property;
             UnpercievedValue = unprValue;
@@ -453,86 +462,216 @@ namespace Alice {
             Type = ObjectPropertyType.Object;
         }
 
+
+        public override string ToString() {
+            if (Type == ObjectPropertyType.UnpercievedValue) {
+                return UnpercievedValue;
+            }
+            else if (Type == ObjectPropertyType.Object) {
+                return ObjectValue.Class.Spelling;
+            }
+            else if (Type == ObjectPropertyType.Word) {
+                return Value.Spelling;
+            }
+            return "type shit";
+        }
+
+
         public double CompareTo(Property p) {
-            if (Type == p.Type) {
-                if (Type == ObjectPropertyType.UnpercievedValue) {
-                    return UnpercievedValue == p.UnpercievedValue ? 1 : 0;
+            Double conf = 0;
+            if (p.Type == ObjectPropertyType.NoValue_NoType) {
+                if (p.Name != null) {
+                    if (Name != null)
+                        conf = Name.CompareTo(p.Name);
+                    else
+                        return 0; //conf = 0;
                 }
-                else if (Type == ObjectPropertyType.Object) {
-                    return ObjectValue.CompareTo(p.ObjectValue);
-                }
-                else if (Type == ObjectPropertyType.Word) {
-                    return Value.CompareTo(p.Value);
+                else {
+                    conf = 1;
                 }
             }
-            return 0;
+            if (Type == p.Type) {
+                if (p.Name != null) {
+                    if (Name != null)
+                        conf = Name.CompareTo(p.Name);
+                    else
+                        return 0; //conf = 0;
+                }
+                else {
+                    conf = 1;
+                }
+
+                if (Type == ObjectPropertyType.UnpercievedValue) {
+                    conf *= UnpercievedValue == p.UnpercievedValue ? 1 : 0;
+                }
+                else if (Type == ObjectPropertyType.Object) {
+                    conf *= ObjectValue.CompareTo(p.ObjectValue);
+                }
+                else if (Type == ObjectPropertyType.Word) {
+                    conf *= Value.CompareTo(p.Value);
+                }
+            }
+            return conf;
         }
     }
 
-    
-    public class Object {
-        Noun Class;     // промежуток времени. / редактирование. В.П. Е.Ч.
-        
-        // Word =        день         время                 группа         группа
-        // Collocation = день недели. время редактирования. крутая группа. kiss.
-
-        //  = крутая. / музыкальная. название = kiss. музыкант = а1. музыкант а2. жанр = рок. жанр = рок'н'ролл.
-
+    public class SmthWithProperties {
         List<Property> Properties = new List<Property>();
+
+
+        public void AddProperty(Property prop) {
+            Properties.Add(prop);
+        }
 
         public void AddProperty(String value) {
             if (value.IndexOf(' ') == -1)
-                Properties.Add(new Property(Brain.GetWord(value)));
+                Properties.Add(new Property(Brain.Word(value)));
             else if (value.Length > 100)
                 Properties.Add(new Property(value));
             else
                 Properties.Add(new Property(value));
         }
-
-        public void AddProperty(String value, String property) {
+        public void AddProperty(String property, String value) {
             Object prop = new Object(property);
 
             if (value.IndexOf(' ') == -1)
-                Properties.Add(new Property(prop, Brain.GetWord(value)));
+                Properties.Add(new Property(prop, Brain.Word(value)));
             else if (value.Length > 100)
                 Properties.Add(new Property(prop, value));
             else
                 Properties.Add(new Property(prop, new Object(property)));
         }
 
-        // = крутая. / музыкальная. название = kiss. музыкант = а1. музыкант а2. жанр = рок. жанр = рок'н'ролл.
+        public void AddProperty(Object value) {
+            Properties.Add(new Property(value));
+        }
+        public void AddProperty(String property, Object value) {
+            Object prop = new Object(property);
+            Properties.Add(new Property(prop, value));
+        }
 
-        // рок - жанр
-        // вечер - часть чего? дня - 0.9
-        // ночь - часть дня - 0.3
-        // привет, как дела? - содержание
-        // Alexey Mogilnikov - автор
-        // 22.03.2014 - Дата
-        // весна + ранняя - время чего? года
-        // 2014 - год
-        // 21:23 - Время
-        // 21 - час
-        // 9 чего? вечера - время - 0.3
-        // пол чего? 9 - время - 0.5
 
-        // жесткий[ - жесткость] 
-        // любимый 
-        // важный 
-        // какой? двадцать второй - день 
-        // новый 
-        // красный - цвет 
+        public Double CompareProperties(SmthWithProperties p) {
+            if (p.Properties.Count > 0) {
+                Double sumConf = 0;
+                foreach (var i in p.Properties) {
+                    Double conf = 0;
+                    foreach (var j in Properties) {
+                        conf = Math.Max(conf, j.CompareTo(i));
+                    }
+                    sumConf += conf;
+                }
+                return sumConf / p.Properties.Count;
+            }
+            else
+                return 1;
+        }
 
-        // public void AddProperty(Thing value, Thing property) {
-            // WordConnection wc = new WordConnection(value, property);
-            // Properties.Add(wc);
-        // }
+        public Property FindProperty(Property p) {
+            Double maxConf = 0;
+            Property maxProp = null;
 
-        public Object(Noun objectClass = null) {
+            Double conf = 0;
+            foreach (var i in Properties) {
+                conf = i.CompareTo(p);
+                if (conf > maxConf) {
+                    maxConf = conf;
+                    maxProp = i;
+                }
+            }
+
+            return maxProp;
+        }
+    }
+
+    public enum SentenceType {
+        Declarative,
+        Imperative,
+        Interrogative
+    }
+    public class Predicat : SmthWithProperties {
+        public Verb Action;
+        public SentenceType Type = SentenceType.Declarative;
+        public Property Q;
+
+        public Predicat(Verb action = null, SentenceType type = SentenceType.Declarative, Property q = null) {
+            Action = action;
+            Type = type;
+            Q = q;
+        }
+        public Predicat(String action = null, SentenceType type = SentenceType.Declarative, String q = "") {
+            if (action.IndexOf(' ') == -1)
+                Action = (Verb)Brain.GetRefinedWord(action + "$ИНФИНИТИВ");
+            if (q.IndexOf(' ') == -1)
+                Q = new Property(new Object(q), Property.ObjectPropertyType.NoValue_NoType);
+            Type = type;
+        }
+        public Predicat(String action) {
+            if (action.IndexOf(' ') == -1)
+                Action = (Verb)Brain.GetRefinedWord(action + "$ИНФИНИТИВ");
+        }
+
+        public Double CompareTo(Predicat p) {
+            Double ans = 1;
+
+            if (Action != null && p.Action != null) {
+                ans *= Action.CompareTo(p.Action);
+            }
+            else if (Action == null) {
+                return 0;
+            }
+
+            ans *= CompareProperties(p);
+
+            return ans;
+        }
+
+
+        public Property AnsverTo(Predicat p) {
+            if (p.Type != SentenceType.Interrogative || p.Q == null)
+                return null;
+
+            var prop = FindProperty(p.Q);
+
+            return prop;
+        }
+        public Object ObjAnsverTo(Predicat p) {
+            if (p.Type != SentenceType.Interrogative || p.Q == null)
+                return null;
+            
+            Object obj = null;
+
+            var prop = FindProperty(p.Q);
+
+            if (prop != null)
+                obj = prop.ObjectValue;
+
+            return obj;
+        }
+        public String StringAnsverTo(Predicat p) {
+            if (p.Type != SentenceType.Interrogative || p.Q == null)
+                return null;
+
+            Object obj = null;
+
+            var prop = FindProperty(p.Q);
+
+            if (prop != null)
+                return prop.ToString();
+
+            return "";
+        }
+    }
+
+    public class Object : SmthWithProperties {
+        public Word Class; //Noun Class;
+
+        public Object(Word objectClass = null) {
             Class = objectClass;
         }
         public Object(String objClass) {
             if (objClass.IndexOf(' ') == -1)
-                Class = (Noun)Brain.GetRefinedWord(objClass + "$С");
+                Class = (Word)Brain.GetRefinedWord(objClass); //(objClass + "$С"); !!!!!!
             //else if (value.Length > 100)
             //    Properties.Add(new Property(value));
             //else
@@ -549,18 +688,7 @@ namespace Alice {
                 return 0;
             }
 
-            if (p.Properties.Count > 0) {
-                Double sumConf = 0;
-                foreach (var i in p.Properties) {
-                    Double conf = 0;
-                    foreach (var j in Properties) {
-                        conf = Math.Max(conf, j.CompareTo(i));
-                    }
-                    sumConf += conf;
-                }
-                sumConf /= p.Properties.Count;
-                ans *= sumConf;
-            }
+            ans *= CompareProperties(p);
 
             return ans;
         }
@@ -1266,12 +1394,14 @@ namespace Alice {
             Relations.RemoveAll(i => (i.A.PartIndex == A || i.B.PartIndex == B));
         }
 
-        class Predicat {
+        
+
+        class WetPredicat {
             public WetCollocationPartID RootID;
             public int Left = -1;
             public int Right = -1;
 
-            public Predicat(WetCollocationPartID root, int left = -1, int right = -1) {
+            public WetPredicat(WetCollocationPartID root, int left = -1, int right = -1) {
                 RootID = root;
                 Left = left;
                 Right = right;
@@ -1281,7 +1411,7 @@ namespace Alice {
         private void GetTrees() {
             WetCollocationPartID Predicate = null;
 
-            List<Predicat> Roots = new List<Predicat>();
+            List<WetPredicat> Roots = new List<WetPredicat>();
 
             for (int i = 0; i < Parts.Count; i++) {
                 var a = Parts[i];
@@ -1291,7 +1421,7 @@ namespace Alice {
                     for (int iForm = 0; iForm < aForms.Count; iForm++) {
                         var aForm = aForms[iForm];
                         if (aForm.POS == PsOS.Verb) {
-                            Roots.Add(new Predicat(new WetCollocationPartID(i, iVar, iForm)));
+                            Roots.Add(new WetPredicat(new WetCollocationPartID(i, iVar, iForm)));
                         }
                     }
                 }
@@ -1801,7 +1931,7 @@ namespace Alice {
             }
             return word;
         }
-        public static Word GetWord(String word) {
+        public static Word Word(String word) {
             List<IParadigm> paradigms = ParadigmsList(word);
 
             if (paradigms != null) {
@@ -1854,10 +1984,10 @@ namespace Alice {
                         return i;
                     }
                 }
-                return GetWord(word);
+                return Word(word);
             }
             else {
-                return GetWord(word);
+                return Word(word);
             }
         }
 

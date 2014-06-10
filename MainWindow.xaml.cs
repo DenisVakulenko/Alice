@@ -156,22 +156,22 @@ namespace Alice {
 
 
         public void TestWordsComparator() {
-            Brain.Instance.AddSynonyms(Brain.GetWord("красный"), Brain.GetWord("розовый"), 0.5);
-            Brain.Instance.AddSynonyms(Brain.GetWord("красный"), Brain.GetWord("фиолетовый"), 0.5);
+            Brain.Instance.AddSynonyms(Brain.Word("красный"), Brain.Word("розовый"), 0.5);
+            Brain.Instance.AddSynonyms(Brain.Word("красный"), Brain.Word("фиолетовый"), 0.5);
 
-            var cmp1 = Brain.GetWord("красный").CompareTo(Brain.GetWord("красный"));
-            var cmp2 = Brain.GetWord("красный").CompareTo(Brain.GetWord("фиолетовый"));
-            var cmp3 = Brain.GetWord("розовый").CompareTo(Brain.GetWord("фиолетовый"));
+            var cmp1 = Brain.Word("красный").CompareTo(Brain.Word("красный"));
+            var cmp2 = Brain.Word("красный").CompareTo(Brain.Word("фиолетовый"));
+            var cmp3 = Brain.Word("розовый").CompareTo(Brain.Word("фиолетовый"));
 
-            Brain.Instance.AddSynonyms(Brain.GetWord("кот"), Brain.GetWord("котик"), 0.9);
-            Brain.Instance.AddSynonyms(Brain.GetWord("собака"), Brain.GetWord("пес"), 0.8);
+            Brain.Instance.AddSynonyms(Brain.Word("кот"), Brain.Word("котик"), 0.9);
+            Brain.Instance.AddSynonyms(Brain.Word("собака"), Brain.Word("пес"), 0.8);
 
-            ((Noun)Brain.GetWord("кот")).AddGiperonim(Brain.GetWord("животное"));
-            ((Noun)Brain.GetWord("собака")).AddGiperonim(Brain.GetWord("животное"));
+            ((Noun)Brain.Word("кот")).AddGiperonim(Brain.Word("животное"));
+            ((Noun)Brain.Word("собака")).AddGiperonim(Brain.Word("животное"));
 
-            var cmp4 = Brain.GetWord("кот").CompareTo(Brain.GetWord("животное"));
-            var cmp5 = Brain.GetWord("собака").CompareTo(Brain.GetWord("животное"));
-            var cmp6 = Brain.GetWord("котик").CompareTo(Brain.GetWord("животное"));
+            var cmp4 = Brain.Word("кот").CompareTo(Brain.Word("животное"));
+            var cmp5 = Brain.Word("собака").CompareTo(Brain.Word("животное"));
+            var cmp6 = Brain.Word("котик").CompareTo(Brain.Word("животное"));
         }
 
         public void TestObjectsComparator() {
@@ -211,6 +211,85 @@ namespace Alice {
             var cmp10 = obj6.CompareTo(obj5);
         }
 
+        private void LearnSomeSemantic() {
+            //var about = Brain.Word("про");
+            //var insmth = Brain.Word("в");
+            //var after = Brain.Word("после");
+
+            Noun Lex = (Noun)Brain.Word("Лёха");
+            Lex.AddGiperonim("человек");
+            Lex.AddSynonym("Алексей");
+            Lex.AddSynonym("Лёша");
+
+            ((Noun)Brain.Word("человек")).AddGiperonim("животное");
+            ((Noun)Brain.Word("животное")).AddGiperonim("кто");
+            ((Noun)Brain.Word("сообщение")).AddGiperonim("что");
+            ((Noun)Brain.Word("текст")).AddGiperonim("что");
+            // ((Noun)Brain.Word("сообщение")).AddHolonim("заголовок");
+
+            var Animal = Brain.Word("животное");
+            Animal.AddSynonym("животинка");
+
+            var cmp1 = Brain.Word("Лёха").CompareTo(Brain.Word("животное"));
+        }
+
+        public void TestPredicatsComparator() {
+            Noun Lex = (Noun)Brain.Word("Лёха");
+            Lex.AddGiperonim("человек");
+            Lex.AddSynonym("Алексей");
+            Lex.AddSynonym("Лёша");
+
+            var msg = new Object("сообщение");
+            msg.AddProperty(new Property(new Object("автор"), Lex));
+            msg.AddProperty(new Property(new Object("содержание"), "привет, привет привет привет. диплом надо сдавать."));
+
+            var msgPredicat1 = new Predicat("написал");
+            msgPredicat1.AddProperty(new Property(new Object("автор"), Lex));
+            msgPredicat1.AddProperty(new Property(new Object("где"), msg));
+            msgPredicat1.AddProperty(new Property(new Object("текст"), "привет, привет привет привет. диплом надо сдавать."));
+            var msgPredicat2 = new Predicat("прислал");
+            msgPredicat2.AddProperty(new Property(new Object("автор"), Lex));
+            msgPredicat2.AddProperty(new Property(new Object("сообщение"), msg));
+            //msg.GetPregicates();
+
+            var pr1 = new Predicat("пришло");
+            pr1.AddProperty("вчера");
+            //pr1.AddProperty("когда", "вчера");
+            //pr1.AddProperty(msg);
+            pr1.AddProperty("что", msg);
+
+            // что там пришло вчера
+            var pr2 = new Predicat("пришло", SentenceType.Interrogative, "что");
+            pr2.AddProperty("вчера");
+            pr2.AddProperty("там");
+            
+            var cmp1 = pr1.CompareTo(pr2);
+            var ans1 = pr1.ObjAnsverTo(pr2);
+
+
+            // что написано в сообщении которое пришло вчера
+            // что есть\было написано в сообщении которое пришло вчера
+
+            // сообщение которое пришло вчера
+            var pr3 = new Predicat("пришло", SentenceType.Interrogative, "сообщение");
+            pr3.AddProperty("вчера");
+
+            var cmp2 = pr1.CompareTo(pr2);
+            var ans2 = pr1.ObjAnsverTo(pr2);
+
+            // что написано в ans2
+            var pr4 = new Predicat("написано", SentenceType.Interrogative, "что");
+            //pr4.AddProperty("где", ans2); // в чем
+
+            var ans3 = msgPredicat1.StringAnsverTo(pr4);
+
+            //var pr5 = new Predicat("написано", SentenceType.Interrogative, "кем");
+            //pr5.AddProperty("где", ans2);
+
+            //var prop = new Property(new Object("содержание"), Property.ObjectPropertyType.NoValue_NoType);
+            //var ans5 = ans2.FindProperty(prop);
+        }
+
         Alice.Brain Dict = new Brain();
         Note i = new Note(null, "Первая тестовая заметка", "Тест");
         private void Button_Click_1(object sender, RoutedEventArgs e) {
@@ -220,6 +299,12 @@ namespace Alice {
 
             TestWordsComparator();
             TestObjectsComparator();
+
+            LearnSomeSemantic();
+            
+            TestPredicatsComparator();
+
+            // TestFinder();
             
             //var c = new WetCollocation(
             //"поздно вечером уставший я скушал спелого сочного яблока из бабушкиного " +
@@ -234,7 +319,15 @@ namespace Alice {
 
             //прибежал из сада - можно
 
-            var write = Brain.GetWord("писал");
+            // Noun Class;     // промежуток времени. / редактирование. В.П. Е.Ч.
+
+            // Word =        день         время                 группа         группа
+            // Collocation = день недели. время редактирования. крутая группа. kiss.
+
+            //  = крутая. / музыкальная. название = kiss. музыкант = а1. музыкант а2. жанр = рок. жанр = рок'н'ролл.
+
+
+            var write = Brain.Word("писал");
             write.AskQ.Add(new Word.QItem("что", new String[]{"сообщение", "экзамен", "письмо"}));
             write.AskQ.Add(new Word.QItem("про_что", new String[] { "экзамены", "выходные", "репетицию", "событие" }));
             write.AskQ.Add(new Word.QItem("о ком"));
@@ -246,7 +339,7 @@ namespace Alice {
             write.AskQ.Add(new Word.QItem("где"));
             write.AskQ.Add(new Word.QItem("кто", new String[]{"человек"}));
 
-            Noun human = (Noun)Brain.GetWord("человек");
+            Noun human = (Noun)Brain.Word("человек");
             human.AskQ.Add(new Word.QItem("имя", new String[] { "Лёха", "Макс", "Денис", "Ден" }));
             human.AskQ.Add(new Word.QItem("фамилия", new String[] { "Mogilnikov", "Наумов", "Вакуленко", "Просуков" }));
             human.AskQ.Add(new Word.QItem("возраст", new String[] { "промежуток времени" }));
@@ -254,9 +347,6 @@ namespace Alice {
             
             human.ThisCan.Add(new WordConnection<Verb>("писать", "что делать"));
             human.WeCan.Add(new WordConnection<Verb>("написать", "что сделать"));
-
-
-            
 
             
 
@@ -272,11 +362,8 @@ namespace Alice {
             // постаревшем на холме
 
 
-            var about = Brain.GetWord("про");
-            var insmth = Brain.GetWord("в");
-            var after = Brain.GetWord("после");
             
-            Noun Lex = (Noun)Brain.GetWord("Лёха");
+
             //Lex.
             //Lex.a
 
@@ -293,6 +380,8 @@ namespace Alice {
             var c5 = new WetCollocation("кто написал");
             var c6 = new WetCollocation("ответь что я занят");
             var c16 = new WetCollocation("ответь то что я занят");
+
+            var c17 = new WetCollocation("найди вчерашнюю заметку");
 
             var c7 = new WetCollocation("прозвенел звонок веселый начинается урок");
             var c8 = new WetCollocation("прозвенел звонок веселый урок начинается");
@@ -316,10 +405,10 @@ namespace Alice {
             
             // кот вася который пришел домой ночью [и] спал мертвым сном весь день получил веником по попе.
 
-            Brain.GetWord("коты");
-            Brain.GetWord("кота");
-            Brain.GetWord("кот");
-            Brain.GetWord("кота");
+            Brain.Word("коты");
+            Brain.Word("кота");
+            Brain.Word("кот");
+            Brain.Word("кота");
 
             
             //Dict.GetWord("котик").AddRule("ласковый кот");
@@ -347,6 +436,27 @@ namespace Alice {
             //писал когда???? 2 часа назад
             //писал 2 часа от настоящего назад
             //был в двух метрах от остановки
+
+
+            // рок - жанр
+            // вечер - часть чего? дня - 0.9
+            // ночь - часть дня - 0.3
+            // привет, как дела? - содержание
+            // Alexey Mogilnikov - автор
+            // 22.03.2014 - Дата
+            // весна + ранняя - время чего? года
+            // 2014 - год
+            // 21:23 - Время
+            // 21 - час
+            // 9 чего? вечера - время - 0.3
+            // пол чего? 9 - время - 0.5
+
+            // жесткий[ - жесткость] 
+            // любимый 
+            // важный 
+            // какой? двадцать второй - день 
+            // новый 
+            // красный - цвет 
 
             
             //прошел в двух метрах от остановки
@@ -381,12 +491,12 @@ namespace Alice {
 
 
             Object Msg = new Object("Сообщение");
-            Msg.AddProperty("Alexey Mogilnikov", "Автор");
-            Msg.AddProperty("Привет, как дела?", "Содержание");
-            Msg.AddProperty("18:23", "Время");
-            Msg.AddProperty("10.03.2014", "Дата");
-            Msg.AddProperty(DateTime.Parse("10.03.2014 18:23").ToBinary().ToString(), "Время бинарное");
-            Msg.AddProperty("Не прочитано", ""); // прочитать читать. Что сделать?
+            Msg.AddProperty("Автор", "Alexey Mogilnikov");
+            Msg.AddProperty("Содержание", "Привет, как дела?");
+            Msg.AddProperty("Время", "18:23");
+            Msg.AddProperty("Дата", "10.03.2014");
+            Msg.AddProperty("Время бинарное", DateTime.Parse("10.03.2014 18:23").ToBinary().ToString());
+            Msg.AddProperty("Не прочитано"); // прочитать читать. Что сделать?
 
             //нар. когда? после
             //предлог после чего?
@@ -410,5 +520,7 @@ namespace Alice {
 
             Dict.Words.Count();
         }
+
+        
     }
 }
