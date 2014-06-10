@@ -246,11 +246,11 @@ namespace Alice {
             return pid == paradigmID;
         }
         
-        public void AddSynonym(Word word) {
-            Brain.Instance.AddSynonyms(this, word);
+        public void AddSynonym(Word word, Double conf = 1) {
+            Brain.Instance.AddSynonyms(this, word, conf);
         }
-        public void AddSynonym(String word) {
-            Brain.Instance.AddSynonyms(this, Brain.Word(word));
+        public void AddSynonym(String word, Double conf = 1) {
+            Brain.Instance.AddSynonyms(this, Brain.Word(word), conf);
         }
         
         public void AddRelative(Word word) {
@@ -293,7 +293,7 @@ namespace Alice {
                         return 0;
                 }
                 else {
-                    synonyms.RemoveAll(i => !exc.Contains(i.Word));
+                    synonyms.RemoveAll(i => exc.Contains(i.Word));
 
                     if (synonyms.Count == 0)
                         return 0;
@@ -302,7 +302,7 @@ namespace Alice {
                 }
 
                 foreach (var i in synonyms) {
-                    var conf = i.Word.CompareTo(n, exc);
+                    var conf = i.Word.CompareTo(n, exc); // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! TEST CICLING
                     if (conf != 0)
                         return i.Confidence * conf;
                 }
@@ -337,7 +337,7 @@ namespace Alice {
                 return conf;
 
             foreach (var i in Giperonims) {
-                conf = Math.Max(conf, i.CompareTo(n));
+                conf = Math.Max(conf, i.CompareTo(n)); //, exc));
 
                 if (conf == 1 || conf == -1)
                     return conf;
@@ -525,7 +525,8 @@ namespace Alice {
 
         public void AddProperty(String value) {
             if (value.IndexOf(' ') == -1)
-                Properties.Add(new Property(Brain.Word(value)));
+                Properties.Add(new Property(new Object(Brain.Word(value))));
+                //Properties.Add(new Property(Brain.Word(value)));
             else if (value.Length > 100)
                 Properties.Add(new Property(value));
             else
@@ -535,11 +536,17 @@ namespace Alice {
             Object prop = new Object(property);
 
             if (value.IndexOf(' ') == -1)
-                Properties.Add(new Property(prop, Brain.Word(value)));
+                Properties.Add(new Property(new Object(Brain.Word(value))));
+                //Properties.Add(new Property(prop, Brain.Word(value)));
             else if (value.Length > 100)
                 Properties.Add(new Property(prop, value));
             else
                 Properties.Add(new Property(prop, new Object(property)));
+        }
+        public void AddProperty(String property, DateTime value) {
+            Object prop = new Object(property);
+
+            Properties.Add(new Property(prop, value));
         }
 
         public void AddProperty(Object value) {
@@ -1161,7 +1168,7 @@ namespace Alice {
 
         public new string ToString {
             get {
-                return Collocation.Parts[A.PartIndex].Word + "->" + Collocation.Parts[B.PartIndex].Word;
+                return Collocation.Parts[A.PartIndex].StrWord + "->" + Collocation.Parts[B.PartIndex].StrWord;
             }
         }
 
@@ -1290,11 +1297,11 @@ namespace Alice {
         public WetPartsRelation OutgoingConnection = null;
 
         public WetCollocation Collocation;
-        public String Word;
+        public String StrWord;
         public List<WetCollocationPartVariant> Variants = new List<WetCollocationPartVariant>();
 
         public WetCollocationPart(String word, WetCollocation collocation) {
-            Word = word;
+            StrWord = word;
             var paradigms = Brain.ParadigmsList(word);
             foreach (var paradigm in paradigms) {
                 Variants.Add(new WetCollocationPartVariant(paradigm));
@@ -1323,9 +1330,64 @@ namespace Alice {
             ProcessPostpositions();
             TreeBuilder.AccessoriesChecker.CheckRelations(Relations);
 
-            GetTrees();
+            // GetTrees();
 
             //FilterParadigms();
+        }
+
+        public Predicat GetPredicat() {
+            Predicat p;
+
+            WetCollocationPartID Predicate = null;
+
+            List<WetPredicat> Roots = new List<WetPredicat>();
+
+            for (int i = 0; i < Parts.Count; i++) {
+                var a = Parts[i];
+                for (int iVar = 0; iVar < a.Variants.Count; iVar++)
+                    if (a[iVar].HasOutgoingConnection > 0) {
+                        var aForms = a.Variants[iVar].Forms;
+                        for (int iForm = 0; iForm < aForms.Count; iForm++) {
+                            var aForm = aForms[iForm];
+                            if (aForm.POS == PsOS.Verb) {
+                                Roots.Add(new WetPredicat(new WetCollocationPartID(i, iVar, iForm)));
+                            }
+                        }
+                    }
+            }
+
+            if (Roots.Count == 0) {
+
+            }
+            else if (Roots.Count == 1) {
+                List<WetPartsRelation> TreeRelations = new List<WetPartsRelation>();
+                var prs = FindProperties(new CollocationPart(this, Roots[0].RootID), TreeRelations, 0, Parts.Count);
+
+                //var prs = FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                p = new Predicat((Verb)GetPartVariant(Roots[0].RootID).WordInDict);
+                
+                foreach (var j in prs) {
+                    p.AddProperty(j);
+                }
+
+                return p;
+            }
+            else {
+                for (int i = 0; i < Roots.Count; i++) {
+
+                    List<WetPartsRelation> TreeRelations = new List<WetPartsRelation>();
+                    FindChildren(new CollocationPart(this, Roots[i].RootID), TreeRelations, 0, Parts.Count);
+
+                    //var Unions = FindUnions(Roots[i].RootID.PartIndex + 1, Roots[i + 1].RootID.PartIndex);
+                    //if (Unions.Count == 0) {
+
+                    //}
+                    //else if (Unions.Count == 1) {
+
+                    //}
+                }
+            }
+            return null;
         }
 
         private void ProcessPostpositions() {
@@ -1416,15 +1478,15 @@ namespace Alice {
             for (int i = 0; i < Parts.Count; i++) {
                 var a = Parts[i];
                 for (int iVar = 0; iVar < a.Variants.Count; iVar++)
-                if (a[iVar].HasOutgoingConnection > 0) {
-                    var aForms = a.Variants[iVar].Forms;
-                    for (int iForm = 0; iForm < aForms.Count; iForm++) {
-                        var aForm = aForms[iForm];
-                        if (aForm.POS == PsOS.Verb) {
-                            Roots.Add(new WetPredicat(new WetCollocationPartID(i, iVar, iForm)));
+                    if (a[iVar].HasOutgoingConnection > 0) {
+                        var aForms = a.Variants[iVar].Forms;
+                        for (int iForm = 0; iForm < aForms.Count; iForm++) {
+                            var aForm = aForms[iForm];
+                            if (aForm.POS == PsOS.Verb) {
+                                Roots.Add(new WetPredicat(new WetCollocationPartID(i, iVar, iForm)));
+                            }
                         }
                     }
-                }
             }
 
             if (Roots.Count == 0) {
@@ -1466,6 +1528,73 @@ namespace Alice {
                 }
             }
             return res;
+        }
+
+        private List<Property> FindProperties(CollocationPart part, List<WetPartsRelation> TreeRelations, int l, int r) {
+            List<WetPartsRelation> newRelations = new List<WetPartsRelation>();
+            List<Property> newProperties = new List<Property>();
+
+            foreach (var ir in Relations.Except(TreeRelations)) {
+                //for (int i = l; i < r; i++) {
+                //var p = Relations[i];
+                if (ir.B.PartIndex >= l && ir.B.PartIndex < r)
+                    if (ir.A == part.PWetCollocationPartID) {
+                        var s = ir.ToString;
+
+                        var altR = newRelations.Find(jr => jr.B.PartIndex == ir.B.PartIndex);
+                        if (altR == null) {
+                            newRelations.Add(ir);
+                        }
+                        else if (altR.WetPartVariantB.Paradigm.WordWeight < ir.WetPartVariantB.Paradigm.WordWeight) {
+                            newRelations.Remove(altR);
+                            newRelations.Add(ir);
+                        }
+                    }
+            }
+
+            foreach (var i in newRelations) {
+                TreeRelations.Add(i);
+            }
+
+            foreach (var i in newRelations) {
+                int newL = l;
+                int newR = r;
+
+                foreach (var j in TreeRelations) {
+                    if (j.A.PartIndex < i.B.PartIndex && j.A.PartIndex > newL)
+                        newL = j.A.PartIndex;
+                    if (j.A.PartIndex > i.B.PartIndex && j.A.PartIndex < newR)
+                        newR = j.A.PartIndex;
+
+                    if (j.B.PartIndex < i.B.PartIndex && j.B.PartIndex > newL)
+                        newL = j.B.PartIndex;
+                    if (j.B.PartIndex > i.B.PartIndex && j.B.PartIndex < newR)
+                        newR = j.B.PartIndex;
+                }
+
+                if (i.WetPartFormB.POS == PsOS.Postposition || i.WetPartFormB.POS == PsOS.Proposition) {
+                    if (i.WetPartB.OutgoingConnection != null) {
+                        var nextObj = new Object(i.WetPartB.OutgoingConnection.WetPartVariantB.WordInDict);
+                        var prs = FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                        foreach (var j in prs) {
+                            nextObj.AddProperty(j);
+                        }
+                        newProperties.Add(new Property(new Object(i.WetPartVariantB.WordInDict), nextObj));
+                    }
+                }
+                else {
+                    var nextObj = new Object(i.WetPartVariantB.WordInDict);
+                    var prs = FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                    foreach (var j in prs) {
+                        nextObj.AddProperty(j);
+                    }
+                    newProperties.Add(new Property(nextObj));
+                    //FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                }
+                
+            }
+
+            return newProperties;
         }
 
         private void FindChildren(CollocationPart part, List<WetPartsRelation> TreeRelations, int l, int r) {
@@ -1535,7 +1664,7 @@ namespace Alice {
             WetCollocationPart wcp = Parts[id.PartIndex];
             WetCollocationPartVariant wcpv = Parts[id.PartIndex].Variants[id.VariantIndex];
 
-            return new CollocationPart(wcp.Word, wcpv.Paradigm, wcpv.Forms[id.FormIndex], this, id);
+            return new CollocationPart(wcp.StrWord, wcpv.Paradigm, wcpv.Forms[id.FormIndex], this, id);
         }
         public WetCollocationPart GetWetPart(WetCollocationPartID id) {
             return Parts[id.PartIndex];

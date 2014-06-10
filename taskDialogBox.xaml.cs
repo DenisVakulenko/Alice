@@ -28,8 +28,8 @@ namespace Alice {
         private void txtMsg_KeyDown(object sender, KeyEventArgs e) {
             if (e.Key == Key.Enter) {
                 GUIMng.NewText(txtMsg.Text);
+                txtMsg.Text = "";
             }
-            txtMsg.Text = "";
         }
 
         public void TellText(String text) {

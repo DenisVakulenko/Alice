@@ -290,6 +290,8 @@ namespace Alice {
             //var ans5 = ans2.FindProperty(prop);
         }
 
+        AliceGUIManager agm = AliceGUIManager.Instance;
+
         Alice.Brain Dict = new Brain();
         Note i = new Note(null, "Первая тестовая заметка", "Тест");
         private void Button_Click_1(object sender, RoutedEventArgs e) {
@@ -305,7 +307,9 @@ namespace Alice {
             TestPredicatsComparator();
 
             // TestFinder();
+
             
+
             //var c = new WetCollocation(
             //"поздно вечером уставший я скушал спелого сочного яблока из бабушкиного " +
             //"сада в электричке после долгого дня");

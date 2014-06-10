@@ -16,13 +16,14 @@ namespace Alice {
             }
         }
 
-        public List<ITask> RegisteredTasks;
-        public List<ITask> ExecutedTasks;
+        public List<ITask> RegisteredTasks = new List<ITask>();
+        public List<ITask> ExecutedTasks = new List<ITask>();
 
         public taskDialogBox DB;
 
         public AliceGUIManager() {
             DB = new taskDialogBox(this);
+            DB.Show();
 
             RegisterTask(new taskNotes());
         }
@@ -32,7 +33,25 @@ namespace Alice {
         }
 
         public void NewText(String text) {
+            var WColl = new WetCollocation(text);
 
+            Predicat pr = WColl.GetPredicat(); //new Predicat("покажи");
+            
+            if (pr == null)
+                return;
+            //pr.AddProperty("заметки");
+
+            Double conf = 0;
+            ITask task = null;
+            foreach (var i in RegisteredTasks) {
+                var c = i.CanExecute(pr);
+                if (c > conf) {
+                    c = conf;
+                    task = i;
+                }
+            }
+            if (task != null)
+                task.Execute(pr);
         }
 
         public void TryToAnsver(Predicat p) {
