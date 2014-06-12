@@ -743,9 +743,10 @@ namespace Alice {
             return CheckForms(a, b, ABMatching);
         }
         public static bool CheckForms(Vars.WordForm a, Vars.WordForm b, FormsMatchings match) {
-            if (match.HasFlag(FormsMatchings.Gender) && a.Gender != b.Gender)
-                return false;
             if (match.HasFlag(FormsMatchings.Number) && a.Number != b.Number)
+                return false;
+            if (match.HasFlag(FormsMatchings.Gender) && (a.Gender != b.Gender &&
+                !(a.Gender == Genders.Neuter && a.Number == Numbers.Pl || b.Gender == Genders.Neuter && b.Number == Numbers.Pl)))
                 return false;
             if (match.HasFlag(FormsMatchings.Case) && a.Case != b.Case)
                 return false;
@@ -1071,7 +1072,7 @@ namespace Alice {
             Rules.Add(new PartsRelationRule("С", "П", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("С", "КР_ПРИЛ", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("С", "КР_ПРИЧАСТИЕ", ABLocations.Any, FormsMatchings.GNC));
-            Rules.Add(new PartsRelationRule("С", "ДЕЕПРИЧАСТИЕ", ABLocations.Any, FormsMatchings.GNC));
+            Rules.Add(new PartsRelationRule("С", "ПРИЧАСТИЕ", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("С", "ПРЕДЛ", ABLocations.Any, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("С", "ЧИСЛ", ABLocations.BA, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("С", "МС-П", ABLocations.A_B, FormsMatchings.GNC));
@@ -1080,7 +1081,7 @@ namespace Alice {
             Rules.Add(new PartsRelationRule("МС", "П", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("МС", "КР_ПРИЛ", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("МС", "КР_ПРИЧАСТИЕ", ABLocations.Any, FormsMatchings.GNC));
-            Rules.Add(new PartsRelationRule("МС", "ДЕЕПРИЧАСТИЕ", ABLocations.Any, FormsMatchings.GNC));
+            Rules.Add(new PartsRelationRule("МС", "ПРИЧАСТИЕ", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("МС", "ПРЕДЛ", ABLocations.Any, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("МС", "ЧИСЛ", ABLocations.BA, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("МС", "МС-П", ABLocations.A_B, FormsMatchings.GNC));
@@ -1332,7 +1333,7 @@ namespace Alice {
 
             // GetTrees();
 
-            //FilterParadigms();
+            // FilterParadigms();
         }
 
         public Predicat GetPredicat() {

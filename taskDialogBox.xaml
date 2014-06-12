@@ -6,8 +6,8 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBox x:Name="txtMsg" Margin="10,0,10,10" TextWrapping="Wrap" Text="TextBox" KeyDown="txtMsg_KeyDown" Height="23" VerticalAlignment="Bottom"/>
-        <TextBlock x:Name="tbHistory" Margin="10,10,10,51" TextWrapping="Wrap" Text="TextBlock"/>
+        <TextBox x:Name="txtMsg" Margin="10,0,10,10" TextWrapping="Wrap" Text="покажи исходящие письма" KeyDown="txtMsg_KeyDown" Height="23" VerticalAlignment="Bottom"/>
+        <TextBlock x:Name="tbHistory" Margin="10,10,10,51" TextWrapping="Wrap" Text=""/>
 
     </Grid>
 </Window>

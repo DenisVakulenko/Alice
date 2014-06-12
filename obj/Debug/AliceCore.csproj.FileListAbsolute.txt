@@ -25,3 +25,11 @@ D:\_Diploma\Alice\obj\Debug\taskMailBox.baml
 D:\_Diploma\Alice\obj\Debug\taskMailBox.g.cs
 D:\_Diploma\Alice\obj\Debug\GeneratedInternalTypeHelper.g.cs
 D:\_Diploma\Alice\obj\Debug\Alice_MarkupCompile.lref
+D:\_Diploma\Alice\obj\Debug\ucLetterMinimized.baml
+D:\_Diploma\Alice\obj\Debug\ucLetterMinimized.g.cs
+D:\_Diploma\Alice\bin\Debug\Pop3MimeClient.exe
+D:\_Diploma\Alice\bin\Debug\Pop3MimeClient.pdb
+D:\_Diploma\Alice\bin\Debug\Pop3MimeClient.xml
+D:\_Diploma\Alice\bin\Debug\S22.Imap.dll
+D:\_Diploma\Alice\bin\Debug\S22.Imap.pdb
+D:\_Diploma\Alice\bin\Debug\S22.Imap.xml

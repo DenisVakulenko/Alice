@@ -49,6 +49,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="S22.Imap">
+      <HintPath>..\_Kim\S22.Imap\bin\Debug v4.0\S22.Imap.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -68,6 +71,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ucLetterMinimized.xaml.cs">
+      <DependentUpon>ucLetterMinimized.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Fuzzy.cs" />
     <Compile Include="Margin.cs" />
     <Compile Include="Task.cs" />
@@ -87,6 +93,10 @@
     <Compile Include="ucNoteMinimized.xaml.cs">
       <DependentUpon>ucNoteMinimized.xaml</DependentUpon>
     </Compile>
+    <Page Include="ucLetterMinimized.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -153,6 +163,10 @@
     <ProjectReference Include="..\ClassLibrary1\Lemmatizer.csproj">
       <Project>{81a573bc-3b91-49fc-950c-4df780a34c8c}</Project>
       <Name>Lemmatizer</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\mail\Pop3MimeClient\Pop3MimeClient\Pop3MimeClient.csproj">
+      <Project>{8c5ffb1a-483c-4e63-9de4-5da52bc2a864}</Project>
+      <Name>Pop3MimeClient</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

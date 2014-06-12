@@ -26,6 +26,7 @@ namespace Alice {
             DB.Show();
 
             RegisterTask(new taskNotes());
+            RegisterTask(new taskMailBox());
         }
 
         public void RegisterTask(ITask task) {

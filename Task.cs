@@ -105,7 +105,7 @@ namespace Alice {
             return 1;
         }
 
-        public void ActionShow(Predicat p) {
+        public virtual void ActionShow(Predicat p) {
             this.Show();
         }
         public void ActionHide(Predicat p) {
