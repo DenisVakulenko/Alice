@@ -33,26 +33,68 @@ namespace Alice {
             RegisteredTasks.Add(task);
         }
 
+        ITask LastActiveTask = null;
+        public void SetActiveTask(ITask task) {
+            LastActiveTask = task;
+        }
+
+        public void RegisterExecTask(ITask task) {
+            if (!ExecutedTasks.Contains(task))
+                ExecutedTasks.Add(task);
+        }
+        public void UnregisterExecTask(ITask task) {
+            if (LastActiveTask == task)
+                LastActiveTask = null;
+            ExecutedTasks.Remove(task);
+        }
+
         public void NewText(String text) {
+            TellText(text, "вы");
+
             var WColl = new WetCollocation(text);
 
             Predicat pr = WColl.GetPredicat(); //new Predicat("покажи");
             
+            String s = pr.ToString();
+            TellText(s);
             if (pr == null)
                 return;
             //pr.AddProperty("заметки");
 
-            Double conf = 0;
+            Double maxConf = 0;
             ITask task = null;
+
+            if (LastActiveTask != null) {
+                var c = LastActiveTask.CanExecute(pr, true);
+                if (c > 0.1) {
+                    maxConf = c;
+                    task = LastActiveTask;
+                    LastActiveTask.Execute(pr, true);
+                    return;
+                }
+            }
+            
+            foreach (var i in ExecutedTasks) {
+                var c = i.CanExecute(pr, false);
+                if (c > maxConf) {
+                    maxConf = c;
+                    task = i;
+                }
+            }
+            if (maxConf > 0.1 && task != null) {
+                task.Execute(pr, false);
+                return;
+            }
+
             foreach (var i in RegisteredTasks) {
-                var c = i.CanExecute(pr);
-                if (c > conf) {
-                    c = conf;
+                var c = i.CanExecute(pr, false);
+                if (c > maxConf) {
+                    maxConf = c;
                     task = i;
                 }
             }
             if (task != null)
-                task.Execute(pr);
+                task.Execute(pr, false);
         }
 
         public void TryToAnsver(Predicat p) {
@@ -66,14 +108,13 @@ namespace Alice {
                 //    ans = a;
                 //}
             }
-
         }
 
         //public void TellText(String text) {
         //    DB.TellText(text);
         //}
-        public static void TellText(String text) {
-            Instance.DB.TellText(text);
+        public static void TellText(String text, String au = "") {
+            Instance.DB.TellText(text, au);
         }
 
     }

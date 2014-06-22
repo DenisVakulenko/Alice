@@ -76,7 +76,8 @@ namespace Alice {
             Parent = parent;
 
             Author = i.From.DisplayName;
-            Recipient = i.To[0].Address;
+            if (i.To.Count > 0)
+                Recipient = i.To[0].Address;
 
             Header = StrConv(i.Subject, i.SubjectEncoding);
             Text = StrConv(i.Body, i.BodyEncoding);
@@ -286,10 +287,13 @@ namespace Alice {
 
         public override void ActionShow(Predicat p) {
             base.ActionShow(p);
-            var pp = p.FindProperty(new Property("что")).ObjectValue;
-            if (pp != null)
-            if (pp.FindProperty(new Property("исходящий")) != null) {
-                btnInOut.Content = "вх.";
+            var what = p.FindProperty(new Property("что"));
+            if (what != null) {
+                var pp = what.ObjectValue;
+                if (pp != null)
+                    if (pp.FindProperty(new Property("исходящий")) != null) {
+                        btnInOut.Content = "вх.";
+                    }
             }
             UpdateLetters();
         }

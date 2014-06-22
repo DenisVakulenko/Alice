@@ -46,14 +46,14 @@ namespace Alice {
     }
 
     public interface ITask {
-        Double CanExecute(Predicat pr);
-        Double Execute(Predicat pr);
+        Double CanExecute(Predicat pr, Boolean isOnTop);
+        Double Execute(Predicat pr, Boolean isOnTop);
         //Property AnsverTo(Predicat pr, out Double conf);
     }
 
     public class Task : Window, ITask {
-        int ProgID;
-        int ID;
+        //int ProgID;
+        //int ID;
 
         public delegate void TaskActionExecuter(Predicat predicat);
         public List<TaskAction> Actions = new List<TaskAction>();
@@ -61,22 +61,52 @@ namespace Alice {
         public class TaskAction {
             public Predicat PredicatPattern;
             public TaskActionExecuter Executer;
+            public Boolean NeedToBeOnTop;
 
-            public TaskAction(Predicat predicatPattern, TaskActionExecuter executer) {
+            public TaskAction(Predicat predicatPattern, TaskActionExecuter executer, Boolean needToBeOnTop = false) {
                 PredicatPattern = predicatPattern;
                 Executer = executer;
+                NeedToBeOnTop = needToBeOnTop;
             }
+        }
+
+        public Task() {
+            Closing += Task_Closing;
+            StateChanged += Task_StateChanged;
+            Activated += Task_Activated;
+        }
+
+        void Task_Activated(object sender, EventArgs e) {
+            AliceGUIManager.Instance.SetActiveTask(this);
+            AliceGUIManager.Instance.RegisterExecTask(this);
+        }
+
+        void Task_StateChanged(object sender, EventArgs e) {
+            if ((sender as Window).IsVisible == true) { //System.Windows.WindowState.Normal) {
+                AliceGUIManager.Instance.RegisterExecTask(this);
+            }
+            else {
+                AliceGUIManager.Instance.UnregisterExecTask(this);
+            }
+        }
+
+        void Task_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
+            e.Cancel = true;
+            this.Hide();
+            AliceGUIManager.Instance.UnregisterExecTask(this);
         }
 
         public void AddAction(Predicat p, TaskActionExecuter a) {
             Actions.Add(new TaskAction(p, a));
         }
 
-        public Double CanExecute(Predicat pr) {
+        public Double CanExecute(Predicat pr, Boolean isOnTop) {
             Double conf = 0;
             Double c;
 
             foreach (var i in Actions) {
+                if (i.NeedToBeOnTop == true && !isOnTop)
+                    continue;
                 c = pr.CompareTo(i.PredicatPattern);
                 if (c > conf) {
                     conf = c;
@@ -86,13 +116,15 @@ namespace Alice {
             return conf;
         }
 
-        public Double Execute(Predicat pr) {
+        public Double Execute(Predicat pr, Boolean isOnTop) {
             Double conf = 0;
             Double c;
 
             TaskAction a = null;
 
             foreach (var i in Actions) {
+                //if (i.NeedToBeOnTop == true && !isOnTop)
+                //    continue;
                 c = pr.CompareTo(i.PredicatPattern);
                 if (c > conf) {
                     conf = c;
@@ -111,46 +143,5 @@ namespace Alice {
         public void ActionHide(Predicat p) {
             this.Hide();
         }
-
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
-            e.Cancel = true;
-            this.Hide();
-        }
-    }
-
-    class Messenger : Task {
-
-        class Dialogue : Messenger {
-
-        }
-        class SearchInDialogue : Messenger {
-
-        }
-
-        class Dialogues : Messenger {
-
-        }
-        class SearchInDialogues : Messenger {
-
-        }
-    }
-
-
-    class NotesTask : Task {
-        class Context {
-            class SearchData {
-                List<String> S;
-                
-            }
-        }
-        enum Contexts {
-            ViewAll,
-            ViewOnlyHeaders,
-            
-        }
-        // 
-        //TestQ() {};
-
-
     }
 }

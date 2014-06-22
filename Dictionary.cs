@@ -145,6 +145,10 @@ namespace Alice {
         
         //protected List<Connection<SpecifiedWord>> Rules;
 
+        public override string ToString() {
+            return Spelling.ToLower();
+        }
+        
         public class QItem {
             Word Q;
             List<Word> VerifiedAnsvers = new List<Word>();
@@ -403,6 +407,7 @@ namespace Alice {
         public Word Value { get; set; }
         public Object ObjectValue { get; set; }
         public DateTime DateTimeValue { get; set; }
+        public Predicat PredicatValue { get; set; }
         public Int32 IntValue { get; set; }
         public ObjectPropertyType Type;
 
@@ -461,6 +466,11 @@ namespace Alice {
             ObjectValue = value;
             Type = ObjectPropertyType.Object;
         }
+        public Property(Predicat value) {
+            Name = null;
+            PredicatValue = value;
+            Type = ObjectPropertyType.Predicat;
+        }
 
 
         public override string ToString() {
@@ -468,7 +478,10 @@ namespace Alice {
                 return UnpercievedValue;
             }
             else if (Type == ObjectPropertyType.Object) {
-                return ObjectValue.Class.Spelling;
+                return ObjectValue.ToString();
+            }
+            else if (Type == ObjectPropertyType.Predicat) {
+                return PredicatValue.ToString();
             }
             else if (Type == ObjectPropertyType.Word) {
                 return Value.Spelling;
@@ -511,6 +524,46 @@ namespace Alice {
                     conf *= Value.CompareTo(p.Value);
                 }
             }
+            else {
+                if (p.Type == ObjectPropertyType.Object && Type == ObjectPropertyType.DateTime) {
+                    Double c = 0;
+                    c = p.ObjectValue.CompareTo(new Object("сегодняшняя"));
+                    if (c > 0)
+                        if (DateTimeValue.Day == DateTime.Now.Day)
+                            return c;
+                    c = p.ObjectValue.CompareTo(new Object("вчерашняя"));
+                    if (c > 0)
+                        if (DateTimeValue.Day == DateTime.Now.AddDays(-1).Day)
+                            return c;
+                    c = p.ObjectValue.CompareTo(new Object("позавчерашняя"));
+                    if (c > 0)
+                        if (DateTimeValue.Day == DateTime.Now.AddDays(-2).Day)
+                            return c;
+                    var week = new Object("неделя");
+                    c = p.ObjectValue.CompareTo(week);
+                    if (c > 0) {
+                        week.AddProperty("эта");
+                        c = p.ObjectValue.CompareTo(week);
+                        if (c > 0)
+                            if (DateTimeValue.Day > DateTime.Now.AddDays(-7).Day)
+                                return c;
+                        week = new Object("неделя");
+                        week.AddProperty("прошлая");
+                        c = p.ObjectValue.CompareTo(week);
+                        if (c > 0)
+                            if (DateTimeValue.Day > DateTime.Now.AddDays(-14).Day &&
+                                DateTimeValue.Day < DateTime.Now.AddDays(-7).Day)
+                                return c;
+                        week = new Object("неделя");
+                        week.AddProperty("позапрошлая");
+                        c = p.ObjectValue.CompareTo(week);
+                        if (c > 0)
+                            if (DateTimeValue.Day > DateTime.Now.AddDays(-21).Day &&
+                                DateTimeValue.Day < DateTime.Now.AddDays(-14).Day)
+                                return c;
+                    }
+                }
+            }
             return conf;
         }
     }
@@ -518,6 +571,15 @@ namespace Alice {
     public class SmthWithProperties {
         List<Property> Properties = new List<Property>();
 
+
+        public override String ToString() {
+            String ans = "";
+            foreach (var i in Properties) {
+                foreach (var j in i.ToString().Split('\n'))
+                    ans += "\n-" + j;
+            }
+            return ans;
+        }
 
         public void AddProperty(Property prop) {
             Properties.Add(prop);
@@ -556,7 +618,6 @@ namespace Alice {
             Object prop = new Object(property);
             Properties.Add(new Property(prop, value));
         }
-
 
         public Double CompareProperties(SmthWithProperties p) {
             if (p.Properties.Count > 0) {
@@ -601,6 +662,12 @@ namespace Alice {
         public SentenceType Type = SentenceType.Declarative;
         public Property Q;
 
+        public override String ToString() {
+            String ans = Action.ToString() + " | predicate " + Type.ToString();
+            ans += base.ToString();
+            return ans;
+        }
+
         public Predicat(Verb action = null, SentenceType type = SentenceType.Declarative, Property q = null) {
             Action = action;
             Type = type;
@@ -632,7 +699,6 @@ namespace Alice {
 
             return ans;
         }
-
 
         public Property AnsverTo(Predicat p) {
             if (p.Type != SentenceType.Interrogative || p.Q == null)
@@ -672,6 +738,12 @@ namespace Alice {
 
     public class Object : SmthWithProperties {
         public Word Class; //Noun Class;
+
+        public override String ToString() {
+            String ans = Class.ToString() + " | object";
+            ans += base.ToString();
+            return ans;
+        }
 
         public Object(Word objectClass = null) {
             Class = objectClass;
@@ -745,8 +817,9 @@ namespace Alice {
         public static bool CheckForms(Vars.WordForm a, Vars.WordForm b, FormsMatchings match) {
             if (match.HasFlag(FormsMatchings.Number) && a.Number != b.Number)
                 return false;
-            if (match.HasFlag(FormsMatchings.Gender) && (a.Gender != b.Gender &&
-                !(a.Gender == Genders.Neuter && a.Number == Numbers.Pl || b.Gender == Genders.Neuter && b.Number == Numbers.Pl)))
+            if (match.HasFlag(FormsMatchings.Gender) && (a.Gender != b.Gender))
+            if (!(a.Gender == Genders.Neuter && a.Number == Numbers.Pl || b.Gender == Genders.Neuter && b.Number == Numbers.Pl) &&
+                !(a.Gender == Genders.N && a.Number == Numbers.Pl || b.Gender == Genders.N && b.Number == Numbers.Pl))
                 return false;
             if (match.HasFlag(FormsMatchings.Case) && a.Case != b.Case)
                 return false;
@@ -757,6 +830,7 @@ namespace Alice {
         }
         public static bool CheckForm(Vars.WordForm form, Vars.WordForm template) {
             if (form.POS != template.POS)
+                if (!(form.POS == PsOS.Infinitive && template.POS == PsOS.Verb))
                 return false;
             if (template.Case != Cases.N && form.Case != template.Case)
                 return false;
@@ -1011,8 +1085,8 @@ namespace Alice {
 
                 if ((ABLocation & relation.ABLocation) == 0)
                     return false;
-                
-                if (!PartsRelationRule.CheckForms(relation.WetPartFormA, HeadForm, ABMatching))
+
+                if (!PartsRelationRule.CheckForms(relation.WetPartFormA, relation.WetPartFormB, ABMatching))
                     return false;
 
                 foreach (var i in Unions) {
@@ -1027,9 +1101,9 @@ namespace Alice {
             static AccessoryInfo[] AccessoriesInfo = {
                 new AccessoryInfo("Г",  ABLocations.A_B, FormsMatchings.N, Vars.strUnions[0]),
 
-                new AccessoryInfo("С",  ABLocations.A_B, FormsMatchings.N, Vars.strUnions[1]),
-                new AccessoryInfo("МС", ABLocations.A_B, FormsMatchings.N, Vars.strUnions[1]),
-                new AccessoryInfo("МС-П", ABLocations.A_B, FormsMatchings.N, Vars.strUnions[1]),
+                new AccessoryInfo("С",  ABLocations.A_B, FormsMatchings.Number | FormsMatchings.Gender, Vars.strUnions[1]),
+                new AccessoryInfo("МС", ABLocations.A_B, FormsMatchings.Number | FormsMatchings.Gender, Vars.strUnions[1]),
+                new AccessoryInfo("МС-П", ABLocations.A_B, FormsMatchings.Number | FormsMatchings.Gender, Vars.strUnions[1]),
             
                 new AccessoryInfo("Г",  ABLocations.A_B, FormsMatchings.N, Vars.strUnions[2]),
 
@@ -1061,21 +1135,30 @@ namespace Alice {
         }
 
         private TreeBuilder() {
-            Rules.Add(new PartsRelationRule("Г", "С им", ABLocations.Any, FormsMatchings.Number));
+            //Rules.Add(new PartsRelationRule("Г", "С им", ABLocations.Any, FormsMatchings.Number));
             Rules.Add(new PartsRelationRule("Г", "С", ABLocations.Any, FormsMatchings.N));
+            
             // мы писали письма // письма приходили
             // письма писали мы // письма писали мы хотим чтобы нас читали.
-            Rules.Add(new PartsRelationRule("Г", "МС им", ABLocations.Any, FormsMatchings.Number | FormsMatchings.Litso));
+
+            //Rules.Add(new PartsRelationRule("Г", "МС им", ABLocations.Any, FormsMatchings.Number | FormsMatchings.Litso));
             Rules.Add(new PartsRelationRule("Г", "МС", ABLocations.Any, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("Г", "МС-П", ABLocations.Any, FormsMatchings.N));
-            
+            Rules.Add(new PartsRelationRule("Г", "СОЮЗ", ABLocations.Any, FormsMatchings.N));
+
+            //Rules.Add(new PartsRelationRule("Г", "С", ABLocations.Any, FormsMatchings.N));
+            //Rules.Add(new PartsRelationRule("Г", "МС", ABLocations.Any, FormsMatchings.N));
+            //Rules.Add(new PartsRelationRule("Г", "МС-П", ABLocations.Any, FormsMatchings.N));
+            //Rules.Add(new PartsRelationRule("Г", "СОЮЗ", ABLocations.Any, FormsMatchings.N));
+
+            //Rules.Add(new PartsRelationRule("С", "С имя", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("С", "П", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("С", "КР_ПРИЛ", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("С", "КР_ПРИЧАСТИЕ", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("С", "ПРИЧАСТИЕ", ABLocations.Any, FormsMatchings.GNC));
             Rules.Add(new PartsRelationRule("С", "ПРЕДЛ", ABLocations.Any, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("С", "ЧИСЛ", ABLocations.BA, FormsMatchings.N));
-            Rules.Add(new PartsRelationRule("С", "МС-П", ABLocations.A_B, FormsMatchings.GNC));
+            Rules.Add(new PartsRelationRule("С", "МС-П", ABLocations.A_B, FormsMatchings.Number | FormsMatchings.Gender));
             Rules.Add(new PartsRelationRule("С", "МС", ABLocations.A_B, FormsMatchings.GNC));
 
             Rules.Add(new PartsRelationRule("МС", "П", ABLocations.Any, FormsMatchings.GNC));
@@ -1096,6 +1179,7 @@ namespace Alice {
             Rules.Add(new PartsRelationRule("МС-П", "МС", ABLocations.A_B, FormsMatchings.GNC));
 
             Rules.Add(new PartsRelationRule("Г", "ПРЕДЛ", ABLocations.Any, FormsMatchings.N));
+            Rules.Add(new PartsRelationRule("ПРИЧАСТИЕ", "ПРЕДЛ", ABLocations.Any, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("ПРЕДЛ", "С", ABLocations.A_B, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("ПРЕДЛ", "МС", ABLocations.A_B, FormsMatchings.N));
             Rules.Add(new PartsRelationRule("ПРЕДЛ", "МС-П", ABLocations.AB, FormsMatchings.N)); // в котором
@@ -1167,11 +1251,14 @@ namespace Alice {
             Collocation = collocation;
         }
 
-        public new string ToString {
-            get {
-                return Collocation.Parts[A.PartIndex].StrWord + "->" + Collocation.Parts[B.PartIndex].StrWord;
-            }
+        public override string ToString() {
+            return Collocation.Parts[A.PartIndex].StrWord + "->" + Collocation.Parts[B.PartIndex].StrWord;
         }
+        //public new string ToString {
+        //    get {
+        //        return Collocation.Parts[A.PartIndex].StrWord + "->" + Collocation.Parts[B.PartIndex].StrWord;
+        //    }
+        //}
 
         public ABLocations ABLocation {
             get {
@@ -1316,26 +1403,84 @@ namespace Alice {
     }
 
 
-
-
     public class WetCollocation {
         public List<WetCollocationPart> Parts = new List<WetCollocationPart>();
         List<WetPartsRelation> Relations = new List<WetPartsRelation>();
 
         public WetCollocation(String collocation = "") {
             foreach (String Word in collocation.Split(' ')) {
+                if (Word != "")
                 Parts.Add(new WetCollocationPart(Word, this));
             }
+            
             BuildRelations();
+            
             ProcessPreposotions();
             ProcessPostpositions();
-            TreeBuilder.AccessoriesChecker.CheckRelations(Relations);
+            
+            ProcessAccessories();
+            
+            DeleteFalseRelations();
+            SolveAmbiguity();
 
             // GetTrees();
-
             // FilterParadigms();
         }
 
+        public Predicat GetAmbigPredicat() {
+            Predicat p;
+
+            WetCollocationPartID Predicate = null;
+
+            List<WetPredicat> Roots = new List<WetPredicat>();
+
+            for (int i = 0; i < Parts.Count; i++) {
+                var a = Parts[i];
+                for (int iVar = 0; iVar < a.Variants.Count; iVar++)
+                    if (a[iVar].HasOutgoingConnection > 0) {
+                        var aForms = a.Variants[iVar].Forms;
+                        for (int iForm = 0; iForm < aForms.Count; iForm++) {
+                            var aForm = aForms[iForm];
+                            if (aForm.POS == PsOS.Verb) {
+                                Roots.Add(new WetPredicat(new WetCollocationPartID(i, iVar, iForm)));
+                            }
+                        }
+                    }
+            }
+
+            if (Roots.Count == 0) {
+
+            }
+            else if (Roots.Count == 1) {
+                List<WetPartsRelation> TreeRelations = new List<WetPartsRelation>();
+                var prs = FindProperties(new CollocationPart(this, Roots[0].RootID), TreeRelations, 0, Parts.Count);
+
+                //var prs = FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                p = new Predicat((Verb)GetPartVariant(Roots[0].RootID).WordInDict);
+
+                foreach (var j in prs) {
+                    p.AddProperty(j);
+                }
+
+                return p;
+            }
+            else {
+                for (int i = 0; i < Roots.Count; i++) {
+
+                    List<WetPartsRelation> TreeRelations = new List<WetPartsRelation>();
+                    FindChildren(new CollocationPart(this, Roots[i].RootID), TreeRelations, 0, Parts.Count);
+
+                    //var Unions = FindUnions(Roots[i].RootID.PartIndex + 1, Roots[i + 1].RootID.PartIndex);
+                    //if (Unions.Count == 0) {
+
+                    //}
+                    //else if (Unions.Count == 1) {
+
+                    //}
+                }
+            }
+            return null;
+        }
         public Predicat GetPredicat() {
             Predicat p;
 
@@ -1345,6 +1490,7 @@ namespace Alice {
 
             for (int i = 0; i < Parts.Count; i++) {
                 var a = Parts[i];
+                if (a.IngoingConnection == null)
                 for (int iVar = 0; iVar < a.Variants.Count; iVar++)
                     if (a[iVar].HasOutgoingConnection > 0) {
                         var aForms = a.Variants[iVar].Forms;
@@ -1391,6 +1537,12 @@ namespace Alice {
             return null;
         }
 
+        // Preprocessing
+
+        private void BuildRelations() {
+            Relations = TreeBuilder.FindRelations(this);
+        }
+
         private void ProcessPostpositions() {
             for (int j = 0; j < Relations.Count; j++) {
                 var r = Relations[j];
@@ -1398,7 +1550,7 @@ namespace Alice {
                     r.WetPartA.OutgoingConnection = r;
                     r.WetPartB.IngoingConnection = r;
 
-                    RemoveAllRelations(r.A.PartIndex, r.B.PartIndex);
+                    RemoveRelations(r.A.PartIndex, r.B.PartIndex);
 
                     ProcessPreposotions();
                 }
@@ -1409,13 +1561,13 @@ namespace Alice {
                 var a = Parts[i];
                 if (a.OutgoingConnection == null)
                     if (a.Variants[0].Forms[0].POS == PsOS.Proposition) {
-                        int min = Parts.Count;
+                        int min = Parts.Count+1;
                         WetPartsRelation minRelation = null;
                         bool shit = false;
 
                         for (int j = 0; j < Relations.Count; j++) {
                             var r = Relations[j];
-                            if (r.A.PartIndex == i && Parts[r.A.PartIndex].IngoingConnection == null) {
+                            if (min > r.B.PartIndex && r.A.PartIndex == i && Parts[r.A.PartIndex].IngoingConnection == null) {
                                 min = r.B.PartIndex;
                                 minRelation = r;
                             }
@@ -1437,9 +1589,11 @@ namespace Alice {
                                 var b = Parts[minRelation.B.PartIndex];
                                 b.IngoingConnection = minRelation;
                                 
-                                RemoveAllRelations(i, minRelation.B.PartIndex);
+                                RemoveRelations(i, minRelation.B.PartIndex);
 
                                 Relations.RemoveAll(ir => (ir.A.PartIndex == minRelation.B.PartIndex && ir.B.PartIndex <= i));
+                                Relations.RemoveAll(ir => (ir.B.PartIndex == i && ir.A.PartIndex > i && ir.A.PartIndex < minRelation.B.PartIndex));
+                                Relations.RemoveAll(ir => ((ir.A.PartIndex < i || ir.A.PartIndex > minRelation.B.PartIndex) && ir.B.PartIndex > i && ir.B.PartIndex < minRelation.B.PartIndex));
 
                                 ProcessPreposotions();
                             }
@@ -1452,12 +1606,183 @@ namespace Alice {
                     }
             }
         }
-        
-        void RemoveAllRelations(int A, int B) {
+        private void RemoveRelations(int A, int B) {
             Relations.RemoveAll(i => (i.A.PartIndex == A || i.B.PartIndex == B));
         }
 
+        private void ProcessAccessories() {
+            var acc = TreeBuilder.AccessoriesChecker.CheckRelations(Relations);
+
+            acc.Sort((a, b) => a.B.PartIndex.CompareTo(b.B.PartIndex));
+
+            while (acc.Count > 0) {
+                var i = acc.First();
+                
+                Int32 predicatStarts = i.B.PartIndex;
+                WetPartsRelation accessoryRoot = null;
+                Int32 predicatRoot = -1;
+                foreach (var j in Relations) {
+                    if ((j.WetPartFormA.POS == PsOS.Infinitive || j.WetPartFormA.POS == PsOS.Verb) && j.A.PartIndex > predicatStarts && j.WetPartFormA.Povelit != isPovelit.Povelit) {
+                        if (accessoryRoot == null || accessoryRoot.A.PartIndex > j.A.PartIndex ||
+                            (accessoryRoot.A.PartIndex == j.A.PartIndex && j.B.PartIndex == predicatStarts)) {
+                            accessoryRoot = j;
+                            predicatRoot = accessoryRoot.A.PartIndex;
+                        }
+                    }
+                }
+
+                Boolean allRight = true;
+                foreach (var j in acc) {
+                    if (j.B.PartIndex > predicatStarts && j.B.PartIndex < predicatRoot) {
+                        allRight = false;
+                        break;
+                    }
+                }
+
+                var alts = acc.FindAll(j => j.B.PartIndex == i.B.PartIndex);
+                
+                foreach (var alt in alts)
+                    acc.Remove(alt);
+
+                if (allRight) {
+                    if (accessoryRoot != null) {
+                        alts.RemoveAll(j => j.A.PartIndex == accessoryRoot.A.PartIndex);
+                        if (alts.Count > 1) {
+                            var context = new IntContext();
+                            context.Vars.Add((int)accessoryRoot.WetPartVariantA.Paradigm.ParadigmID);
+                            context.Vars.Add((int)i.WetPartVariantB.Paradigm.ParadigmID);
+                            context.AddFormInfo(accessoryRoot.WetPartFormA);
+                            var alternatives = new List<IntContext>();
+
+                            Int32 d = 100500;
+                            foreach (var j in alts) {
+                                d = Math.Min(Math.Abs(j.A.PartIndex - accessoryRoot.A.PartIndex), d); 
+                            }
+
+                            foreach (var j in alts) {
+                                var alternative = new IntContext();
+                                alternative.Vars.Add(j.A.PartIndex > accessoryRoot.A.PartIndex ? 2 : 1);
+                                alternative.Vars.Add(j.A.PartIndex == d ? 1 : 2);
+                                alternative.Vars.Add((int)j.WetPartVariantA.Paradigm.ParadigmID);
+                                alternative.AddFormInfo(j.WetPartFormA);
+
+                                alternatives.Add(alternative);
+                            }
+                            i = alts[Brain.Instance.AccessoriesAD.TryToResolve(alternatives, context)];
+                        }
+                        else {
+                            var context = new IntContext();
+                            context.Vars.Add((int)accessoryRoot.WetPartVariantA.Paradigm.ParadigmID);
+                            context.Vars.Add((int)i.WetPartVariantB.Paradigm.ParadigmID);
+                            context.AddFormInfo(accessoryRoot.WetPartFormA);
+                            var alternative = new IntContext();
+                            alternative.Vars.Add(i.A.PartIndex > accessoryRoot.A.PartIndex ? 2 : 1);
+                            alternative.Vars.Add(Math.Abs(i.A.PartIndex - accessoryRoot.A.PartIndex));
+                            alternative.Vars.Add((int)i.WetPartVariantA.Paradigm.ParadigmID);
+                            alternative.AddFormInfo(i.WetPartFormA);
+                            Brain.Instance.AccessoriesAD.Add(alternative, context);
+                        }
+
+                        i.WetPartB.IngoingConnection = accessoryRoot;
+                        i.WetPartA.OutgoingConnection = accessoryRoot;
+
+                        var newRelation = new WetPartsRelation(i.A, accessoryRoot.A, null, this);
+                        Relations.Add(newRelation);
+                        accessoryRoot.WetPartA.IngoingConnection = newRelation;
+
+                        Relations.RemoveAll(j => (j.A.PartIndex == predicatRoot &&
+                                                  (j.B.PartIndex < predicatStarts))); // || j.B.PartIndex > predicatRoot)));
+                        Relations.RemoveAll(j => ((j.A.PartIndex > predicatStarts && j.A.PartIndex < predicatRoot) &&
+                                                  (j.B.PartIndex < predicatStarts || j.B.PartIndex > predicatRoot)));
+                        Relations.RemoveAll(j => ((j.A.PartIndex < predicatStarts || j.A.PartIndex > predicatRoot) &&
+                                                  (j.B.PartIndex > predicatStarts && j.B.PartIndex < predicatRoot)));
+
+                        var headPos = i.A.PartIndex;
+                        Relations.RemoveAll(j => ((j.A.PartIndex > headPos && j.A.PartIndex < predicatStarts) &&
+                                                  (j.B.PartIndex < headPos || j.B.PartIndex > predicatStarts)));
+                        Relations.RemoveAll(j => ((j.A.PartIndex < headPos || j.A.PartIndex > predicatStarts) &&
+                                                  (j.B.PartIndex > headPos && j.B.PartIndex < predicatStarts)));
+                    }
+                }
+                else {
+                    foreach (var alt in alts)
+                        acc.Add(alt);
+                }
+                acc.RemoveAll(j => !Relations.Contains(j));
+            }
+        }
+        private List<WetPartsRelation> IngoingRelations(WetCollocationPartID id) {
+            return Relations.FindAll(i => i.B == id);
+        }
+
+        private void DeleteFalseRelations() {
+            List<WetPartsRelation> toDelete = new List<WetPartsRelation>();
+            do {
+                toDelete.Clear();
+                for (int i = 0; i < Relations.Count; i++) {
+                    var r = Relations[i];
+                    if (r.WetPartFormA.POS != PsOS.Verb && (r.WetPartA.IngoingConnection == null || r.WetPartA.IngoingConnection.B != r.A)) {
+                        if (Relations.Find(j => j.B == r.A) == null)
+                            toDelete.Add(r);
+                    }
+                }
+                foreach (var i in toDelete)
+                    Relations.Remove(i);
+            } while (toDelete.Count > 0);
+        }
+        private void SolveAmbiguity() {
+            for (int i = 0; i < Relations.Count; i++) {
+                var ir = Relations[i];
+                var partID = Relations[i].B;
+                //var a = Parts[i];
+                if (ir.WetPartB.IngoingConnection == null) {
+                    var ingConn = Relations.FindAll(j => j.B == partID);
+
+                    var context = new IntContext();
+                    context.Vars.Add((int)ir.WetPartVariantB.Paradigm.ParadigmID);
+                    context.AddFormInfo(ir.WetPartFormB);
+
+                    if (ingConn.Count > 1) {
+                        var alternatives = new List<IntContext>();
+
+                        Int32 d = 100500;
+                        foreach (var j in ingConn)
+                            d = Math.Min(Math.Abs(j.A.PartIndex - ir.B.PartIndex), d);
+
+                        foreach (var j in ingConn) {
+                            var alternative = new IntContext();
+                            alternative.Vars.Add((int)j.WetPartVariantA.Paradigm.ParadigmID);
+                            alternative.Vars.Add(Math.Abs(j.A.PartIndex - ir.B.PartIndex) == d ? 1 : 2);
+                            alternative.AddFormInfo(j.WetPartFormA);
+
+                            alternatives.Add(alternative);
+                        }
+
+                        var ans = ingConn[Brain.Instance.IngoingConnectionsAD.TryToResolve(alternatives, context)];
+
+                        ingConn.Remove(ans);
+                        Relations.RemoveAll(r => ingConn.Contains(r));
+
+                        ir.WetPartB.IngoingConnection = ans;
+                    }
+                    else {
+                        var correctAlternative = new IntContext();
+                        var relation = ingConn[0];
+                        correctAlternative.Vars.Add((int)relation.WetPartVariantA.Paradigm.ParadigmID);
+                        correctAlternative.Vars.Add(1);
+                        correctAlternative.AddFormInfo(relation.WetPartFormA);
+
+                        Brain.Instance.IngoingConnectionsAD.Add(correctAlternative, context);
+                        ir.WetPartB.IngoingConnection = relation;
+                    }
+                }
+                else {
+                    Relations.RemoveAll(r => r.B == ir.B && r != ir.WetPartB.IngoingConnection);
+                }
+            }
+        }
         
+        // Preprocessing
 
         class WetPredicat {
             public WetCollocationPartID RootID;
@@ -1539,8 +1864,9 @@ namespace Alice {
                 //for (int i = l; i < r; i++) {
                 //var p = Relations[i];
                 if (ir.B.PartIndex >= l && ir.B.PartIndex < r)
-                    if (ir.A == part.PWetCollocationPartID) {
-                        var s = ir.ToString;
+                    if (ir.A.PartIndex == part.PWetCollocationPartID.PartIndex &&
+                        ir.A.VariantIndex == part.PWetCollocationPartID.VariantIndex) { // part.PWetCollocationPartID) {
+                        var s = ir.ToString();
 
                         var altR = newRelations.Find(jr => jr.B.PartIndex == ir.B.PartIndex);
                         if (altR == null) {
@@ -1576,7 +1902,7 @@ namespace Alice {
                 if (i.WetPartFormB.POS == PsOS.Postposition || i.WetPartFormB.POS == PsOS.Proposition) {
                     if (i.WetPartB.OutgoingConnection != null) {
                         var nextObj = new Object(i.WetPartB.OutgoingConnection.WetPartVariantB.WordInDict);
-                        var prs = FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                        var prs = FindProperties(new CollocationPart(this, i.WetPartB.OutgoingConnection.B), TreeRelations, newL, newR);
                         foreach (var j in prs) {
                             nextObj.AddProperty(j);
                         }
@@ -1584,15 +1910,27 @@ namespace Alice {
                     }
                 }
                 else {
-                    var nextObj = new Object(i.WetPartVariantB.WordInDict);
-                    var prs = FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
-                    foreach (var j in prs) {
-                        nextObj.AddProperty(j);
+                    if (i.WetPartVariantB.WordInDict.POS == PsOS.Communion ||
+                        i.WetPartVariantB.WordInDict.POS == PsOS.Gerund ||
+                        i.WetPartVariantB.WordInDict.POS == PsOS.Infinitive ||
+                        i.WetPartVariantB.WordInDict.POS == PsOS.Verb) {
+                        var nextObj = new Predicat((Verb)i.WetPartVariantB.WordInDict);
+                        var prs = FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                        foreach (var j in prs) {
+                            nextObj.AddProperty(j);
+                        }
+                        newProperties.Add(new Property(nextObj));
                     }
-                    newProperties.Add(new Property(nextObj));
-                    //FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                    else {
+                        var nextObj = new Object(i.WetPartVariantB.WordInDict);
+                        var prs = FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                        foreach (var j in prs) {
+                            nextObj.AddProperty(j);
+                        }
+                        newProperties.Add(new Property(nextObj));
+                        //FindProperties(new CollocationPart(this, i.B), TreeRelations, newL, newR);
+                    }
                 }
-                
             }
 
             return newProperties;
@@ -1606,7 +1944,7 @@ namespace Alice {
                 //var p = Relations[i];
                 if (ir.B.PartIndex >= l && ir.B.PartIndex < r)
                 if (ir.A == part.PWetCollocationPartID) {
-                    var s = ir.ToString;
+                    var s = ir.ToString();
                     
                     var altR = NewRelations.Find(jr => jr.B.PartIndex == ir.B.PartIndex);
                     if (altR == null) {
@@ -1643,23 +1981,19 @@ namespace Alice {
             }
         }
 
-        private void BuildRelations() {
-            Relations = TreeBuilder.FindRelations(this);
-        }
+        
 
-        private void FilterParadigms() {
-            //Relations = TreeBuilder.FindRelations(this);
-            foreach (var part in Parts)
-                for (int i = 0; i < part.Variants.Count; i++) {
-                    var variant = part.Variants[i];
-                    if (!variant.HasConnection) {
-                        //variant.
-                        i--;
-                    }
-                }
-
-
-        }
+        //private void FilterParadigms() {
+        //    //Relations = TreeBuilder.FindRelations(this);
+        //    foreach (var part in Parts)
+        //        for (int i = 0; i < part.Variants.Count; i++) {
+        //            var variant = part.Variants[i];
+        //            if (!variant.HasConnection) {
+        //                //variant.
+        //                i--;
+        //            }
+        //        }
+        //}
 
         public CollocationPart GetPart(WetCollocationPartID id) {
             WetCollocationPart wcp = Parts[id.PartIndex];
@@ -1679,6 +2013,7 @@ namespace Alice {
             return wcpv.Forms[id.FormIndex];
         }
     }
+
 
     public class CollocationPart {
         public Word DictWord;
@@ -1776,15 +2111,33 @@ namespace Alice {
     //    }
     //}
 
-    #region Abiguity
+    #region Ambiguity
 
-    class IntContext {
-        public List<int> Vars;
+    interface IMultipleComparable {
+        List<Boolean> CompareTo(IMultipleComparable b);
+        Double CompareDbl(IMultipleComparable b);
+    }
+    class IntContext : IMultipleComparable {
+        public List<int> Vars = new List<int>();
 
+        public void AddFormInfo(Vars.WordForm wf) {
+            Vars.Add((int)wf.POS);
+            Vars.Add((int)wf.Case);
+            Vars.Add((int)wf.Deistvit);
+            Vars.Add((int)wf.Gender);
+            Vars.Add((int)wf.Litso);
+            Vars.Add((int)wf.Number);
+            Vars.Add((int)wf.Odushevl);
+            Vars.Add((int)wf.Perehodn);
+            Vars.Add((int)wf.Povelit);
+            Vars.Add((int)wf.Soversh);
+            Vars.Add((int)wf.Sravnit);
+            Vars.Add((int)wf.Tense);
+        }
         //public override bool Equals(object obj) {
-        //    return this.Equals(obj as AmbiguityContext);
+        //    return this.Equals(obj as IntContext);
         //}
-        //public bool Equals(AmbiguityContext p) {
+        //public bool Equals(IntContext p) {
         //    if (Object.ReferenceEquals(p, null))
         //        return false;
 
@@ -1796,7 +2149,7 @@ namespace Alice {
 
         //    return (PartIndex == p.PartIndex) && (VariantIndex == p.VariantIndex) && (FormIndex == p.FormIndex);
         //}
-        //public static bool operator ==(AmbiguityContext lhs, AmbiguityContext rhs) {
+        //public static bool operator ==(IntContext lhs, IntContext rhs) {
         //    // Check for null on left side. 
         //    if (Object.ReferenceEquals(lhs, null)) {
         //        if (Object.ReferenceEquals(rhs, null)) {
@@ -1810,19 +2163,48 @@ namespace Alice {
         //    // Equals handles case of null on right side. 
         //    return lhs.Equals(rhs);
         //}
-        //public static bool operator !=(AmbiguityContext lhs, AmbiguityContext rhs) {
+        //public static bool operator !=(IntContext lhs, IntContext rhs) {
         //    return !(lhs == rhs);
         //}
         //public override int GetHashCode() {
-        //    return PartIndex * 0x00010000 + VariantIndex * 0x000000100 + FormIndex;
+        //    int h = 0;
+        //    for (int i = 0; i < Vars.Count; i++) {
+        //        i += Vars[i] * (2 << i);//(int)Math.Pow(2, i);
+        //    }
+        //    return h;
         //}
 
-        public List<Boolean> CompareTo(IntContext context) {
+        //public List<Boolean> CompareTo(Object obj) {
+        //    var ans = new List<Boolean>();
+        //    for (int i = 0; i < Vars.Count; i++) {
+        //        ans.Add(Vars[i] == context[i]);
+        //    }
+        //    return ans;
+        //}
+        public List<Boolean> CompareTo(IMultipleComparable context) {
+            IntContext b = (IntContext)context;
             var ans = new List<Boolean>();
-            for (int i = 0; i < Vars.Count; i++) {
-                ans.Add(Vars[i] == context[i]);
+            for (int i = 0; i < Math.Min(b.Vars.Count, Vars.Count); i++) {
+                ans.Add(Vars[i] == b[i]);
             }
             return ans;
+        }
+        public Double CompareDbl(IMultipleComparable context) {
+            IntContext b = (IntContext)context;
+            Double ans = 0;
+            Int16 N = 0;
+            for (int i = 0; i < Math.Min(b.Vars.Count, Vars.Count); i++) {
+                if (Vars[i] == 0 && b[i] == 0)
+                    continue;
+                N++;
+                if (Vars[i] != 0 && b[i] == 0)
+                    ans += 0.1;
+                else
+                    ans += Vars[i] == b[i] ? 1 : 0;
+            }
+            if (N == 0)
+                return 1;
+            return ans / N;
         }
 
         public int this[int key] {
@@ -1834,28 +2216,68 @@ namespace Alice {
             }
         }
     }
-    class AmbiguityItem<T, ContextT> where ContextT : IComparable where T : IComparable {
+    class AmbiguityItem<T, ContextT> where ContextT : IMultipleComparable where T : IMultipleComparable {
         public T Correct;
         public List<T> Alternatives;
         public ContextT Context;
         public Boolean Confirmed = false;
-         
-        public AmbiguityItem(T correct, List<T> alternatives, ContextT context) {
+
+        public AmbiguityItem(T correct, List<T> alternatives, ContextT context, Boolean confirmed = false) {
             Correct = correct;
             Alternatives = alternatives;
             Context = context;
+            Confirmed = confirmed;
         }
     }
-    class AmbuguityDictionary<T, ContextT> where ContextT : IComparable where T : IComparable {
-        List<AmbiguityItem<T, ContextT>> Items;
+    class AmbuguityDictionary<T, ContextT> where ContextT : IMultipleComparable where T : IMultipleComparable {
+        List<AmbiguityItem<T, ContextT>> Items = new List<AmbiguityItem<T,ContextT>>();
 
         public void Add(AmbiguityItem<T, ContextT> item) {
             Items.Add(item);
         }
+        public void Add(T correct, List<T> alternatives, ContextT context, Boolean confirmed = false) {
+            Items.Add(new AmbiguityItem<T, ContextT>(correct, alternatives, context, confirmed));
+        }
+        public void Add(T correct, ContextT context, Boolean confirmed = false) {
+            Items.Add(new AmbiguityItem<T, ContextT>(correct, new List<T>(), context, confirmed));
+        }
         class AmbiguityItemWeights {
+            public double OneAlt_NonConfirmed;
+            public double OneAlt_Confirmed;
+            public void Add_OneAlt_NonConfirmed(double c) {
+                OneAlt_NonConfirmed = Math.Max(OneAlt_NonConfirmed, c);
+            }
+            public void Add_OneAlt_Confirmed(double c) {
+                OneAlt_Confirmed = Math.Max(OneAlt_Confirmed, c);
+            }
+
+            public double Wrong_OneAlt_NonConfirmed;
+            public double Wrong_OneAlt_Confirmed;
+            public void Add_Wrong_OneAlt_NonConfirmed(double c) {
+                Wrong_OneAlt_NonConfirmed = Math.Max(Wrong_OneAlt_NonConfirmed, c);
+            }
+            public void Add_Wrong_OneAlt_Confirmed(double c) {
+                Wrong_OneAlt_Confirmed = Math.Max(Wrong_OneAlt_Confirmed, c);
+            }
+
             public double ContextComparation;
             public double AlternativesMatch;
             public double AlternativesMismatch;
+
+            public double CurrentThruth;
+
+            private double _Thruth;
+            private double _Sum;
+
+            public void AddThruth(Double thruth, Double k) {
+                _Thruth += thruth*k;
+                _Sum += k;
+            }
+            public Double Thruth {
+                get {
+                    return _Thruth / _Sum;
+                }
+            }
 
             public AmbiguityItemWeights(double contextComparation = 0, double alternativesMatch = 0, double alternativesMismatch = 0) {
                 ContextComparation = contextComparation;
@@ -1863,32 +2285,95 @@ namespace Alice {
                 AlternativesMismatch = alternativesMismatch;
             }
         }
-        public T TryToResolve(List<T> alternatives, ContextT context) {
+        public Int32 TryToResolve(List<T> alternatives, ContextT context) {
             Dictionary<T, AmbiguityItemWeights> weights = new Dictionary<T, AmbiguityItemWeights>();
 
             foreach (var i in alternatives) {
                 weights.Add(i, new AmbiguityItemWeights());
             }
 
-            foreach (var i in Items) {
-                T correct = alternatives.Find(alt => alt.Equals(i.Correct));
-                if (correct != null) {
-                    var contextCmp = context.CompareTo(i);
-                    if (contextCmp > 0) {
-                        weights[correct].ContextComparation = contextCmp;
-                      //int match = 0;
-                        int mismatch = 0;
-                        foreach (var j in alternatives) {
-                            if (!i.Alternatives.Contains(j))
-                                mismatch++;
+            foreach (var item in Items) {
+                var contextCmp = context.CompareDbl(item.Context);
+                if (contextCmp > 0) {
+                    Double SumConf = 0;
+                    foreach (var j in alternatives) {
+                        weights[j].CurrentThruth = 0;
+
+                        var maxCmp = item.Correct.CompareDbl(j);
+                        weights[j].CurrentThruth += maxCmp;
+
+                        foreach (var k in item.Alternatives) {
+                            var cmp = k.CompareDbl(j);
+                            weights[j].CurrentThruth += 1-cmp;
+                            maxCmp = Math.Max(maxCmp, cmp);
                         }
-                      //weights[correct].AlternativesMatch = match;
-                        weights[correct].AlternativesMismatch = mismatch;
+
+                        SumConf += maxCmp;
+
+                        weights[j].CurrentThruth /= item.Alternatives.Count + 1;
                     }
+                    SumConf /= alternatives.Count;
+
+                    foreach (var j in alternatives) {
+                        weights[j].AddThruth(weights[j].CurrentThruth, SumConf * contextCmp);
+                    }
+
+                    //if (item.Alternatives.Count == 0) {
+                    //    Double bstCmp = 0;
+                    //    if (item.Confirmed) {
+                    //        foreach (var j in alternatives)
+                    //            weights[j].Add_OneAlt_Confirmed(item.Correct.CompareDbl(j) * contextCmp);
+                    //    }
+                    //    else {
+                    //        foreach (var j in alternatives)
+                    //            weights[j].Add_OneAlt_NonConfirmed(item.Correct.CompareDbl(j) * contextCmp);
+                    //    }
+                    //}
+                    //else {
+                    //    //Double bstCmp = 0;
+                    //    //T bstAlt;
+                    //    //if (i.Confirmed) {
+                    //    //    foreach (var j in alternatives)
+                    //    //        weights[bstAlt].Add_OneAlt_Confirmed(i.Correct.CompareDbl(j) * contextCmp);
+                    //    //}
+                    //    //else {
+                    //    //    foreach (var j in alternatives)
+                    //    //        weights[bstAlt].Add_OneAlt_NonConfirmed(i.Correct.CompareDbl(j) * contextCmp);
+                    //    //}
+                    //}
                 }
+
+                //T correct = alternatives.Find(alt => alt.Equals(i.Correct));
+                //if (correct != null) {
+                //    var contextCmp = context.CompareDbl(i.Context);
+                //    if (contextCmp > 0) {
+                //        weights[correct].ContextComparation = contextCmp;
+                //      //int match = 0;
+                //        int mismatch = 0;
+                //        foreach (var j in alternatives) {
+                //            if (!i.Alternatives.Contains(j))
+                //                mismatch++;
+                //        }
+                //      //weights[correct].AlternativesMatch = match;
+                //        weights[correct].AlternativesMismatch = mismatch;
+                //    }
+                //}
             }
 
-            return alternatives[0];
+            Double maxThruth = -1;
+            T maxAlt = default(T);
+            var index = 0;
+            var cc = 0;
+            foreach (var i in weights) {
+                if (i.Value.Thruth > maxThruth) {
+                    maxThruth = i.Value.Thruth;
+                    maxAlt = i.Key;
+                    index = cc;
+                }
+                cc++;
+            }
+
+            return index;
         }
     }
 
@@ -1911,6 +2396,9 @@ namespace Alice {
         public List<Word> Words = new List<Word>();
         public List<FuzzySynonyms> Synonyms = new List<FuzzySynonyms>();
 
+        public AmbuguityDictionary<IntContext, IntContext> IngoingConnectionsAD = new AmbuguityDictionary<IntContext, IntContext>();
+        public AmbuguityDictionary<IntContext, IntContext> AccessoriesAD = new AmbuguityDictionary<IntContext, IntContext>();
+
         public FuzzySynonyms AddSynonyms(Word a, Word b, Double conf = 1) {
             var newSyn = new FuzzySynonyms(a, b, conf);
             Synonyms.Add(newSyn);
@@ -1927,7 +2415,72 @@ namespace Alice {
             return Synonyms.FindAll(i => i.HasSynonymFor(a)).ConvertAll(i => i.SynonymFor(a));
         }
 
+        public void InitIngoingConnectionsAD() {
+            AddToIngoingConnectionsAD("Г", "", "ПРЕДЛ");
+            AddToIngoingConnectionsAD("ПРИЧАСТИЕ", "", "ПРЕДЛ");
+            AddToIngoingConnectionsAD("ДЕЕПРИЧАСТИЕ", "", "ПРЕДЛ");
+            AddToIngoingConnectionsAD("ИНФИНИТИВ", "", "ПРЕДЛ");
+
+            var correct = new IntContext();
+            correct.Vars.Add(0);
+            correct.Vars.Add(1);
+            correct.AddFormInfo(new Vars.WordForm(""));
+            //var alt = new IntContext();
+            //alt.Vars.Add(0);
+            //alt.Vars.Add(0);
+            //alt.AddFormInfo(new Vars.WordForm(altp));
+            var context = new IntContext();
+            context.Vars.Add(0);
+            context.AddFormInfo(new Vars.WordForm(""));
+
+            IngoingConnectionsAD.Add(correct, new List<IntContext>() { }, context, true);
+        }
+        public void AddToIngoingConnectionsAD(String corr, String altp, String cont) {
+            var correct = new IntContext();
+            correct.Vars.Add(0);
+            correct.Vars.Add(0);
+            correct.AddFormInfo(new Vars.WordForm(corr));
+            var alt = new IntContext();
+            alt.Vars.Add(0);
+            alt.Vars.Add(0);
+            alt.AddFormInfo(new Vars.WordForm(altp));
+            var context = new IntContext();
+            context.Vars.Add(0);
+            context.AddFormInfo(new Vars.WordForm(cont));
+            
+            IngoingConnectionsAD.Add(correct, new List<IntContext>(){alt}, context, true);
+        }
+
+        public void InitAccessoriesAD() {
+            var correct = new IntContext();
+            correct.Vars.Add(1);
+            correct.Vars.Add(0);
+            correct.Vars.Add(0);
+            correct.AddFormInfo(new Vars.WordForm(""));
+            var context = new IntContext();
+            context.Vars.Add(0);
+            context.Vars.Add(0);
+            context.AddFormInfo(new Vars.WordForm(""));
+
+            AccessoriesAD.Add(correct, new List<IntContext>(), context, true);
+
+            correct = new IntContext();
+            correct.Vars.Add(1);
+            correct.Vars.Add(1);
+            correct.Vars.Add(0);
+            correct.AddFormInfo(new Vars.WordForm(""));
+            context = new IntContext();
+            context.Vars.Add(0);
+            context.Vars.Add(0);
+            context.AddFormInfo(new Vars.WordForm(""));
+
+            AccessoriesAD.Add(correct, new List<IntContext>(), context, true);
+        }
+
         public Brain() {
+            InitIngoingConnectionsAD();
+            InitAccessoriesAD();
+
             var rmlPath = System.Environment.GetEnvironmentVariable("RML");
 
             if (string.IsNullOrEmpty(rmlPath)) {

@@ -35,6 +35,16 @@ namespace Alice {
             Edited = Created;
             Viewed = Created;
         }
+        public Note(taskNotes parent, String text, String title, DateTime date) {
+            Parent = parent;
+
+            Header = title;
+            Text = text;
+
+            Created = date;
+            Edited = Created;
+            Viewed = Created;
+        }
 
         public void Show() {
             var Task = new taskNote(this);
@@ -103,6 +113,10 @@ namespace Alice {
 
             Notes.Add(new Note(this, "первая тестовая заметка", "Тест!"));
             Notes.Add(new Note(this, "вторая первая тестовая заметка", "Тест2"));
+            Notes.Add(new Note(this, "третья ВЧЕРАШНЯЯ первая тестовая заметка", "Тест3", DateTime.Now.AddDays(-1)));
+            Notes.Add(new Note(this, "ПОЗАВЧЕРАШНЯЯ вторая первая тестовая заметка", "Тест4", DateTime.Now.AddDays(-2)));
+            Notes.Add(new Note(this, "прошлая неделя! -8 days тестовая заметка", "Тест5", DateTime.Now.AddDays(-8)));
+            Notes.Add(new Note(this, "ПОЗАпрошлая неделя! - 15 days тестовая заметка", "Тест5", DateTime.Now.AddDays(-15)));
 
             UpdateNotes();
 
@@ -139,8 +153,8 @@ namespace Alice {
             notes.AddGiperonim("что");
 
             prShow = new Predicat("открой");
-            prShow.Action.AddSynonym("покажи", 0.6);
-            prShow.Action.AddSynonym("запусти", 0.6);
+            prShow.Action.AddSynonym("покажи", 0.8);
+            prShow.Action.AddSynonym("запусти", 0.8);
             prShow.Action.AddSynonym("дай", 0.3);
             prShow.AddProperty("заметки");
 
@@ -154,6 +168,11 @@ namespace Alice {
             prFix.Action.AddSynonym("сохрани", 0.6);
             prFix.AddProperty("что");
 
+            var prNew = new Predicat("создай");
+            prNew.Action.AddSynonym("сделай", 0.6);
+            prNew.Action.AddSynonym("добавить", 0.6);
+            prNew.AddProperty("заметка");
+
             prFind = new Predicat("найди");
             prFind.Action.AddSynonym("покажи", 0.6);
             prFind.Action.AddSynonym("открой", 0.6);
@@ -163,6 +182,58 @@ namespace Alice {
             AddAction(prShow, ActionShow);
             AddAction(prHide, ActionHide);
             AddAction(prFind, ActionFind);
+            AddAction(prNew,  ActionNew);
+
+
+            var context = new IntContext();
+            context.Vars.Add(Brain.Word("c").ParadigmID);
+            context.AddFormInfo(new LemmatizerNET.Vars.WordForm(""));
+
+
+            var alternatives = new List<IntContext>();
+            var alternative = new IntContext();
+
+            var f = Brain.ParadigmsList("найди");
+            foreach (var i in f) {
+                alternative.Vars.Add(i.ParadigmID);
+                alternative.AddFormInfo(new LemmatizerNET.Vars.WordForm(""));
+
+                alternatives.Add(alternative);
+            }
+            f = Brain.ParadigmsList("покажи");
+            foreach (var i in f) {
+                alternative.Vars.Add(i.ParadigmID);
+                alternative.AddFormInfo(new LemmatizerNET.Vars.WordForm(""));
+
+                alternatives.Add(alternative);
+            }
+            f = Brain.ParadigmsList("открой");
+            foreach (var i in f) {
+                alternative.Vars.Add(i.ParadigmID);
+                alternative.AddFormInfo(new LemmatizerNET.Vars.WordForm(""));
+
+                alternatives.Add(alternative);
+            }
+
+            var correctAlternative = new IntContext();
+            correctAlternative.Vars.Add(Brain.Word("заметка").ParadigmID);
+
+            Brain.Instance.IngoingConnectionsAD.Add(correctAlternative, alternatives, context);
+
+            correctAlternative = new IntContext();
+            correctAlternative.Vars.Add(Brain.Word("пометка").ParadigmID);
+
+            Brain.Instance.IngoingConnectionsAD.Add(correctAlternative, alternatives, context);
+
+            correctAlternative = new IntContext();
+            correctAlternative.Vars.Add(Brain.Word("запись").ParadigmID);
+
+            Brain.Instance.IngoingConnectionsAD.Add(correctAlternative, alternatives, context);
+
+            correctAlternative = new IntContext();
+            correctAlternative.Vars.Add(Brain.Word("записка").ParadigmID);
+
+            Brain.Instance.IngoingConnectionsAD.Add(correctAlternative, alternatives, context);
         }
 
 
@@ -175,6 +246,12 @@ namespace Alice {
             Notes.Last().Show();
         }
 
+        public void ActionNew(Predicat pr) {
+            Notes.Add(new Note(this, "", ""));
+            Notes.Last().Show();
+
+            //AliceGUIManager.TellText(note.ToString());
+        }
         public void ActionFind(Predicat pr) {
             var p = pr.FindProperty(new Property(new Object("что"), Property.ObjectPropertyType.NoValue_NoType));
             if (p == null)
@@ -185,10 +262,16 @@ namespace Alice {
 
             Double conf;
             
-            var note = FindNote(p.ObjectValue, out conf);
-            note.Show();
-
-            AliceGUIManager.TellText(note.ToString());
+            var note = FindNotes(p.ObjectValue, out conf);
+            if (note.Count >= 1) {
+                AliceGUIManager.TellText("найдено заметок: " + note.Count + ", совпадение: " + (Int32)(conf*100));
+                foreach (var i in note)
+                    i.Show();
+            }
+            else if (note.Count == 1) {
+                AliceGUIManager.TellText("не найдено заметок");
+            }
+            //AliceGUIManager.TellText(note.ToString());
         }
 
         //public Property AnsverTo(Predicat p, out Double conf) {
@@ -205,7 +288,7 @@ namespace Alice {
             Note bstNote = null;
             foreach (var i in Notes) {
                 var obj = i.ConvertToNL();
-                var c = i.ConvertToNL().CompareTo(p);
+                var c = obj.CompareTo(p);
                 if (conf < c) {
                     conf = c;
                     bstAns = obj;
@@ -214,6 +297,28 @@ namespace Alice {
             }
             return bstNote;
         }
+        public List<Note> FindNotes(Object p, out Double conf) {
+            var ans = new List<Note>();
 
+            conf = 0;
+            Object bstAns = null;
+            Note bstNote = null;
+            foreach (var i in Notes) {
+                var obj = i.ConvertToNL();
+                var c = obj.CompareTo(p);
+                if (conf < c) {
+                    conf = c;
+                    bstAns = obj;
+                    bstNote = i;
+                    ans.Clear();
+                    ans.Add(i);
+                }
+                else if (conf == c) {
+                    ans.Add(i);
+                }
+            }
+
+            return ans;
+        }
     }
 }

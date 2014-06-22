@@ -352,7 +352,6 @@ namespace Alice {
             human.ThisCan.Add(new WordConnection<Verb>("писать", "что делать"));
             human.WeCan.Add(new WordConnection<Verb>("написать", "что сделать"));
 
-            
 
             //human.GeneralizeParents.Add(Brain.GetWord("животное"));
 
@@ -372,10 +371,20 @@ namespace Alice {
             //Lex.a
 
             //write.AskQ.Add(Dictionary.GetWord("j"));
+
+            //var c99 = new WetCollocation("кот который пришел домой когда все уже легли которому все давали колбасу спал мертвым сном");
             
+            var c3 = new WetCollocation("спроси его когда мне идти сдавать документы");
+
+            var c98 = new WetCollocation("кот который пришел домой когда все легли которому все давали колбасу спал мертвым сном");
+            var c99 = new WetCollocation("кот который пришел домой когда все легли которому все кто мог давали колбасу спал мертвым сном");
+
+            var c34 = new WetCollocation("Он жил в покосившейся от времени хижине");
+
+            var c33 = new WetCollocation("Покажи письма которые пришли вчера");
             var c1 = new WetCollocation("что там написал леха");
             var c2 = new WetCollocation("что там неделю назад писали про экзамены");
-            var c3 = new WetCollocation("спроси его когда мне идти сдавать документы");
+            
 
             var c44 = new WetCollocation("собака с длинной шерстью");
 
@@ -391,7 +400,7 @@ namespace Alice {
             var c8 = new WetCollocation("прозвенел звонок веселый урок начинается");
             var c10 = new WetCollocation("звонок прозвенел веселый начинается урок");
 
-            var c9 = new WetCollocation("кот вася который пришел домой ночью спал мертвым сном");
+            var c9 = new WetCollocation("кот который пришел домой ночью спал мертвым сном");
 
             // он сделал те задания, что помогло ему сдать экзамен.
             // он сделал те задания, что дал ему учитель.

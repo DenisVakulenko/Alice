@@ -32,8 +32,8 @@ namespace Alice {
             }
         }
 
-        public void TellText(String text) {
-            tbHistory.Text += text;
+        public void TellText(String text, String author = "") {
+            tbHistory.Text += "\n\n" + (author != "" ? author + ":   " : "") + text;
         }
     }
 }

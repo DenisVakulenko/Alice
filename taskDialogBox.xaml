@@ -1,13 +1,14 @@
 ﻿<Window x:Class="Alice.taskDialogBox"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="taskDialogBoc" Height="300" Width="300">
+        Title="Диалог" Height="300" Width="300">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <TextBox x:Name="txtMsg" Margin="10,0,10,10" TextWrapping="Wrap" Text="покажи исходящие письма" KeyDown="txtMsg_KeyDown" Height="23" VerticalAlignment="Bottom"/>
-        <TextBlock x:Name="tbHistory" Margin="10,10,10,51" TextWrapping="Wrap" Text=""/>
-
+        <TextBox x:Name="txtMsg" Margin="10,0,10,10" TextWrapping="Wrap" Text="покажи исходящие письма которые пришли вчера" KeyDown="txtMsg_KeyDown" Height="23" VerticalAlignment="Bottom"/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" IsHitTestVisible="True" Focusable="False" BorderThickness="0,10,0,0" Margin="0,0,0,38">
+            <TextBlock x:Name="tbHistory" Margin="10,10,10,51" TextWrapping="Wrap" Text=""/>
+        </ScrollViewer>
     </Grid>
 </Window>
