@@ -181,7 +181,7 @@ namespace Alice {
         }
 
 
-        private Dictionary<uint, MailMessage> Hash;
+        private Dictionary<uint, MailMessage> Hash = new Dictionary<uint,MailMessage>();
 
         public ImapClient GetClient() {
             return new ImapClient("imap.gmail.com", 993, "denisvvakulenko@gmail.com", "i'll make alice", AuthMethod.Login, true);
@@ -191,6 +191,9 @@ namespace Alice {
                 return;
 
             Boolean inbx = (String)btnInOut.Content == "исх.";
+
+            this.Title = inbx ? "Входящая почта" : "Исходящая почта";
+
             if (inbx)
             using (var client = GetClient()) {
                 IEnumerable<uint> uids = client.Search(SearchCondition.Unseen());
@@ -207,10 +210,16 @@ namespace Alice {
                 for (int i = uids.Count() - 1; i > uids.Count() - 10; i--) 
                     lastUids.Add(uids.ElementAt(i));
 
+                lastUids.RemoveAll(i => Hash.ContainsKey(i));
+
                 messages = client.GetMessages(lastUids, FetchOptions.TextOnly);
-                
-                foreach (var i in messages)
+
+                var k = 0;
+                foreach (var i in messages) {
                     Letters.Add(new Letter(this, i));
+                    Hash.Add(lastUids[k], i);
+                    k++;
+                }
             }
             else
             using (var client = GetClient()) {
@@ -222,10 +231,21 @@ namespace Alice {
                 for (int i = uids.Count() - 1; i > uids.Count() - 10; i--)
                     lastUids.Add(uids.ElementAt(i));
 
-                IEnumerable<MailMessage> messages = client.GetMessages(lastUids, FetchOptions.TextOnly);
+                //IEnumerable<MailMessage> messages = client.GetMessages(lastUids, FetchOptions.TextOnly);
 
-                foreach (var i in messages)
+                //foreach (var i in messages)
+                //    Letters.Add(new Letter(this, i, true, true));
+
+               lastUids.RemoveAll(i => Hash.ContainsKey(i));
+
+               IEnumerable<MailMessage>  messages = client.GetMessages(lastUids, FetchOptions.TextOnly);
+
+                var k = 0;
+                foreach (var i in messages) {
                     Letters.Add(new Letter(this, i, true, true));
+                    Hash.Add(lastUids[k], i);
+                    k++;
+                }
             }
 
             stackNotes.Children.Clear();
@@ -242,19 +262,20 @@ namespace Alice {
 
             var letters = (Noun)Brain.Word("письма");
             letters.AddSynonym("бандероли");
+            letters.AddSynonym("почта");
             letters.AddGiperonim("что");
 
             prShow = new Predicat("открой");
             prShow.AddProperty("почту");
 
-            var prShow2 = new Predicat("открой");
-            prShow.AddProperty("письма");
+            //var prShow2 = new Predicat("открой");
+            //prShow2.AddProperty("письма");
 
             prHide = new Predicat("закрой");
             prHide.AddProperty("почту");
 
-            var prHide2 = new Predicat("закрой");
-            prHide.AddProperty("письма");
+            //var prHide2 = new Predicat("закрой");
+            //prHide2.AddProperty("письма");
 
             prAnsver = new Predicat("напиши");
             prAnsver.Action.AddSynonym("ответь", 0.9);
@@ -270,8 +291,8 @@ namespace Alice {
             AddAction(prShow, ActionShow);
             AddAction(prHide, ActionHide);
 
-            AddAction(prShow2, ActionShow);
-            AddAction(prHide2, ActionHide);
+            //AddAction(prShow2, ActionShow);
+            //AddAction(prHide2, ActionHide);
             //AddAction(prFind, ActionFind);
         }
 
@@ -291,9 +312,11 @@ namespace Alice {
             if (what != null) {
                 var pp = what.ObjectValue;
                 if (pp != null)
-                    if (pp.FindProperty(new Property("исходящий")) != null) {
+                    if (pp.FindProperty(new Property(new Predicat("исходить"))) != null) {
                         btnInOut.Content = "вх.";
                     }
+                    else
+                        btnInOut.Content = "исх.";
             }
             UpdateLetters();
         }

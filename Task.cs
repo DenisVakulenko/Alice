@@ -90,6 +90,11 @@ namespace Alice {
             }
         }
 
+        new void Hide() {
+            base.Hide();
+            AliceGUIManager.Instance.UnregisterExecTask(this);
+        }
+
         void Task_Closing(object sender, System.ComponentModel.CancelEventArgs e) {
             e.Cancel = true;
             this.Hide();

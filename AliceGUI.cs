@@ -56,7 +56,7 @@ namespace Alice {
             Predicat pr = WColl.GetPredicat(); //new Predicat("покажи");
             
             String s = pr.ToString();
-            TellText(s);
+            //TellText(s);
             if (pr == null)
                 return;
             //pr.AddProperty("заметки");
@@ -64,7 +64,7 @@ namespace Alice {
             Double maxConf = 0;
             ITask task = null;
 
-            if (LastActiveTask != null) {
+            if (LastActiveTask != null && ExecutedTasks.Contains(LastActiveTask)) {
                 var c = LastActiveTask.CanExecute(pr, true);
                 if (c > 0.1) {
                     maxConf = c;

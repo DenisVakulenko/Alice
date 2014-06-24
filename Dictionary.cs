@@ -453,8 +453,14 @@ namespace Alice {
 
         public Property(String value) {
             Name = null;
-            UnpercievedValue = value;
-            Type = ObjectPropertyType.UnpercievedValue;
+            if (value.IndexOf(' ') < 0) {
+                ObjectValue = new Object(value);
+                Type = ObjectPropertyType.Object;
+            }
+            else {
+                UnpercievedValue = value;
+                Type = ObjectPropertyType.UnpercievedValue;
+            }
         }
         public Property(Word value) {
             Name = null;
@@ -519,6 +525,9 @@ namespace Alice {
                 }
                 else if (Type == ObjectPropertyType.Object) {
                     conf *= ObjectValue.CompareTo(p.ObjectValue);
+                }
+                else if (Type == ObjectPropertyType.Predicat) {
+                    conf *= PredicatValue.CompareTo(p.PredicatValue);
                 }
                 else if (Type == ObjectPropertyType.Word) {
                     conf *= Value.CompareTo(p.Value);
@@ -1503,10 +1512,32 @@ namespace Alice {
                     }
             }
 
-            if (Roots.Count == 0) {
-
+            if (Roots.Count != 1) {
+                WetPredicat bstRoot = null;
+                Int32 bst = -1;
+                for (int i = 0; i < Parts.Count; i++) {
+                    var a = Parts[i];
+                    //if (a.IngoingConnection == null)
+                    for (int iVar = 0; iVar < a.Variants.Count; iVar++)
+                        if (a[iVar].HasOutgoingConnection > 0) {
+                            var aForms = a.Variants[iVar].Forms;
+                            for (int iForm = 0; iForm < aForms.Count; iForm++) {
+                                var aForm = aForms[iForm];
+                                if (aForm.POS == PsOS.Verb) {
+                                    if (bst < a[iVar].Paradigm.WordWeight) {
+                                        bst = a[iVar].Paradigm.WordWeight;
+                                        bstRoot = new WetPredicat(new WetCollocationPartID(i, iVar, iForm));
+                                    }
+                                    //Roots.Add(new WetPredicat(new WetCollocationPartID(i, iVar, iForm)));
+                                }
+                            }
+                        }
+                }
+                Roots.Clear();
+                Roots.Add(bstRoot);
             }
-            else if (Roots.Count == 1) {
+
+            if (Roots.Count == 1) {
                 List<WetPartsRelation> TreeRelations = new List<WetPartsRelation>();
                 var prs = FindProperties(new CollocationPart(this, Roots[0].RootID), TreeRelations, 0, Parts.Count);
 
